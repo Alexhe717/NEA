@@ -5,19 +5,25 @@ class Player:
 	def __init__(self,name,piece):
 		self.name=name
 		self.piece=piece
-	def policy(self,board_dimension):
+	def policy(self,board):
+		board_dimension=np.size(board,0)
 		return random.randint(0,board_dimension-1),random.randint(0,board_dimension-1)
 class Game:
 	def __init__(self,board_dimension):
-		self.player_1=Player('1',1)
-		self.player_2=Player('2',2)
 		self.board_dimension=board_dimension
 		self.current_board=board.Board(board_dimension)
+		self.player_1=Player('1',1)
+		self.player_2=Player('2',2)
+	def check_if_cell_occupied(self,x,y):
+		if self.current_board[x][y]=="0":
+			return True
+		else:
+			return False
 	def make_move(self,turn_number):
 		if turn_number%2==0:#player 1
-			self.current_board.change_state(*self.player_1.policy(self.board_dimension),self.player_1.piece)
+			self.current_board.change_state(*self.player_1.policy(self.current_board),self.player_1.piece)
 		else:
-			self.current_board.change_state(*self.player_2.policy(self.board_dimension),self.player_2.piece)
+			self.current_board.change_state(*self.player_2.policy(self.current_board),self.player_2.piece)
 	def game_start(self):
 		self.turn_number=0
 		while True:
