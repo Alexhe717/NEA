@@ -1,26 +1,25 @@
 import numpy as np
 class Board:
-    def __init__(self,row,collum):
-        self.row=row
-        self.collum=collum
-        self.board_array=np.zeros([row,collum])
+    def __init__(self,dimension):
+        self.dimension=dimension
+        self.board_array=np.zeros([dimension,dimension])
     def display(self):
         print(self.board_array)
     def change_state(self,x,y,piece):
         self.board_array[x][y]=piece
     def check_win(self,piece):
-        for i in range(self.row):
+        for i in range(self.dimension):
             num_of_consecutives=0
-            for j in range(self.collum):
+            for j in range(self.dimension):
                 if self.board_array[i][j]==piece:
                     num_of_consecutives+=1
                 else:
                     num_of_consecutives=0
             if num_of_consecutives==5:
                 return True
-        for i in range(self.collum):
+        for i in range(self.dimension):
             num_of_consecutives=0
-            for j in range(self.row):
+            for j in range(self.dimension):
                 if self.board_array[i][j]==piece:
                     num_of_consecutives+=1
                 else:
@@ -28,11 +27,11 @@ class Board:
             if num_of_consecutives==5:
                 return True
         
-        for i in range(self.row):
-            for j in range(self.collum):
+        for i in range(self.dimension):
+            for j in range(self.dimension):
                 num_of_consecutives=0
                 row,collum=i,j
-                while row+1<self.row and collum+1<self.collum:
+                while row+1<self.dimension and collum+1<self.dimension:
                     if self.board_array[row][collum]==piece and self.board_array[row+1][collum+1]==piece:
                         num_of_consecutives+=1
                     else:
@@ -41,11 +40,11 @@ class Board:
                     collum+=1
                 if num_of_consecutives==4:
                     return True
-        for i in range(self.row):
-            for j in range(self.collum):
+        for i in range(self.dimension):
+            for j in range(self.dimension):
                 num_of_consecutives=0
                 row,collum=i,j
-                while row+1<self.row and collum-11<self.collum:
+                while row+1<self.dimension and collum-11<self.dimension:
                     if self.board_array[row][collum]==piece and self.board_array[row+1][collum-1]==piece:
                         num_of_consecutives+=1
                     else:
@@ -56,7 +55,7 @@ class Board:
                     return True
         return False
 
-a=Board(5,5)
+a=Board(5)
 
 a.change_state(0,0,3)
 a.change_state(1,1,3)
@@ -65,7 +64,7 @@ a.change_state(3,3,3)
 a.change_state(4,4,3)
 print(a.board_array)
 print(a.check_win(3))
-b=Board(5,5)
+b=Board(5)
 
 b.change_state(0,4,3)
 b.change_state(1,3,3)
