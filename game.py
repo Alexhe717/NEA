@@ -22,18 +22,22 @@ class Game:
 	def get_policy_from_player(self,player):
 		return player.policy(self.current_board)
 
-	def make_move(self,player):
-		x,y=self.get_policy_from_player(player)
+	def make_move(self,player,board):
+		x=None
+		y=None
+		while (x,y)==(None,None) or board.board_array[x][y]!=0:
+			x,y=self.get_policy_from_player(player)
 		self.current_board.change_state(x,y,player.piece)
 	def game_start(self):
 		players=[self.player_1,self.player_2]
 		self.turn_number=0
+		self.max_turn=self.board_dimension*self.board_dimension
 		while True:
 			if(self.current_board.check_win(self.player_1.piece)):
 				return "player_A won"
 			if(self.current_board.check_win(self.player_2.piece)):
 				return "player_B won"
-			self.make_move(players[self.turn_number%2])
+			self.make_move(players[self.turn_number%2],self.current_board)
 			self.turn_number+=1
 			self.current_board.display()
 
