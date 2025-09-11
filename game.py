@@ -6,7 +6,7 @@ class Player:
 		self.name=name
 		self.piece=piece
 	def policy(self,board):
-		board_dimension=np.size(board,0)
+		board_dimension=np.size(board.board_array,0)
 		return random.randint(0,board_dimension-1),random.randint(0,board_dimension-1)
 class Game:
 	def __init__(self,board_dimension):
@@ -19,22 +19,24 @@ class Game:
 			return True
 		else:
 			return False
-	def make_move(self,turn_number):
-		if turn_number%2==0:#player 1
-			self.current_board.change_state(*self.player_1.policy(self.current_board),self.player_1.piece)
-		else:
-			self.current_board.change_state(*self.player_2.policy(self.current_board),self.player_2.piece)
+	def get_policy_from_player(self,player):
+		return player.policy(self.current_board)
+
+	def make_move(self,player):
+		x,y=self.get_policy_from_player(player)
+		self.current_board.change_state(x,y,player.piece)
 	def game_start(self):
+		players=[self.player_1,self.player_2]
 		self.turn_number=0
 		while True:
 			if(self.current_board.check_win(self.player_1.piece)):
 				return "player_A won"
 			if(self.current_board.check_win(self.player_2.piece)):
 				return "player_B won"
-			self.make_move(self.turn_number)
+			self.make_move(players[self.turn_number%2])
 			self.turn_number+=1
 			self.current_board.display()
 
-a=Game(10)
+a=Game(5)
 print(a.game_start())
 		
