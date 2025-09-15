@@ -7,6 +7,12 @@ class Board:
         print(self.board_array)
     def change_state(self,x,y,piece):
         self.board_array[x][y]=piece
+    def check_draw(self):
+        for i in range(self.dimension):
+            for j in range(self.dimension):
+                if self.board_array[i][j]==0:
+                    return False
+        return True
     def check_win(self,piece):
         for i in range(self.dimension):
             num_of_consecutives=0
