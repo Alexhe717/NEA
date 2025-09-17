@@ -21,7 +21,7 @@ class Board:
                     num_of_consecutives+=1
                 else:
                     num_of_consecutives=0
-            if num_of_consecutives==5:
+            if num_of_consecutives==3:
                 return True
         for i in range(self.dimension):
             num_of_consecutives=0
@@ -30,7 +30,7 @@ class Board:
                     num_of_consecutives+=1
                 else:
                     num_of_consecutives=0
-            if num_of_consecutives==5:
+            if num_of_consecutives==3:
                 return True
         
         for i in range(self.dimension):
@@ -44,7 +44,7 @@ class Board:
                         num_of_consecutives=0
                     row+=1
                     collum+=1
-                if num_of_consecutives==4:
+                if num_of_consecutives==2:
                     return True
         for i in range(self.dimension):
             for j in range(self.dimension):
@@ -57,26 +57,26 @@ class Board:
                         num_of_consecutives=0
                     row+=1
                     collum-=1
-                if num_of_consecutives==4:
+                if num_of_consecutives==2:
                     return True
         return False
 
-a=Board(5)
+# a=Board(5)
 
-a.change_state(0,0,3)
-a.change_state(1,1,3)
-a.change_state(2,2,3)
-a.change_state(3,3,3)
-a.change_state(4,4,3)
-print(a.board_array)
-print(a.check_win(3))
-b=Board(5)
+# a.change_state(0,0,3)
+# a.change_state(1,1,3)
+# a.change_state(2,2,3)
+# a.change_state(3,3,3)
+# a.change_state(4,4,3)
+# print(a.board_array)
+# print(a.check_win(3))
+# b=Board(5)
 
-b.change_state(0,4,3)
-b.change_state(1,3,3)
-b.change_state(2,2,3)
-b.change_state(3,1,3)
-b.change_state(4,0,3)
-print(b.board_array)
-print(b.check_win(3))
+# b.change_state(0,4,3)
+# b.change_state(1,3,3)
+# b.change_state(2,2,3)
+# b.change_state(3,1,3)
+# b.change_state(4,0,3)
+# print(b.board_array)
+# print(b.check_win(3))
 

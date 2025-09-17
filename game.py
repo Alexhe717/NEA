@@ -33,6 +33,8 @@ class Game:
 		self.turn_number=0
 		self.max_turn=self.board_dimension*self.board_dimension
 		while True:
+			if self.current_board.check_draw():
+				return "draw"
 			if(self.current_board.check_win(self.player_1.piece)):
 				return "player_A won"
 			if(self.current_board.check_win(self.player_2.piece)):
@@ -40,7 +42,6 @@ class Game:
 			self.make_move(players[self.turn_number%2],self.current_board)
 			self.turn_number+=1
 			self.current_board.display()
-
-a=Game(5)
-print(a.game_start())
+# a=Game(3)
+# print(a.game_start())
 		
