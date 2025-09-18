@@ -71,26 +71,25 @@ c = board.Board(3)
 c.display()
 print(best_move(c, 1))
 
-import board, minimax
 e = board.Board(3)
 e.change_state(0,0,1); e.change_state(0,1,2); e.change_state(0,2,1)
 e.change_state(1,0,2); e.change_state(1,1,1); e.change_state(1,2,2)
 e.change_state(2,0,2); e.change_state(2,1,1)
 e.display()
-print(best_move(e, 1))  # expect (2,2)
+print(best_move(e, 1))
 
-import board, minimax
+
 f = board.Board(3)
 f.change_state(1,1,1)
 f.change_state(2,0,2); f.change_state(2,1,2)
 f.display()
-print(best_move(f, 2))  # expect (2,2)
+print(best_move(f, 2))
 
 
-import board, minimax
+
 g = board.Board(3)
 g.change_state(0,0,1); g.change_state(1,1,1)
 g.display()
-print(best_move(g, 2))  # expect (2,2)
+print(best_move(g, 2))
 
 
