@@ -15,7 +15,7 @@ class Game:
 		self.player_1=Player('1',1)
 		self.player_2=Player('2',2)
 	def check_if_cell_occupied(self,x,y):
-		if self.current_board[x][y]=="0":
+		if self.current_board.board_array[x][y]==0:
 			return True
 		else:
 			return False
@@ -27,7 +27,7 @@ class Game:
 		y=None
 		while (x,y)==(None,None) or board.board_array[x][y]!=0:
 			x,y=self.get_policy_from_player(player)
-		self.current_board.change_state(x,y,player.piece)
+		board.change_state(x,y,player.piece)
 	def game_start(self):
 		players=[self.player_1,self.player_2]
 		self.turn_number=0
