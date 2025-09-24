@@ -2,6 +2,7 @@ import numpy as np
 class Board:
     def __init__(self,dimension):
         self.dimension=dimension
+        self.condition=3
         self.board_array=np.zeros([dimension,dimension])
     def display(self):
         print(self.board_array)
@@ -21,7 +22,7 @@ class Board:
                     num_of_consecutives+=1
                 else:
                     num_of_consecutives=0
-            if num_of_consecutives==3:
+            if num_of_consecutives==self.condition:
                 return True
         for i in range(self.dimension):
             num_of_consecutives=0
@@ -30,7 +31,7 @@ class Board:
                     num_of_consecutives+=1
                 else:
                     num_of_consecutives=0
-            if num_of_consecutives==3:
+            if num_of_consecutives==self.condition:
                 return True
         
         for i in range(self.dimension):
@@ -44,7 +45,7 @@ class Board:
                         num_of_consecutives=0
                     row+=1
                     collum+=1
-                if num_of_consecutives==2:
+                if num_of_consecutives==self.condition-1:
                     return True
         for i in range(self.dimension):
             for j in range(self.dimension):
@@ -57,7 +58,7 @@ class Board:
                         num_of_consecutives=0
                     row+=1
                     collum-=1
-                if num_of_consecutives==2:
+                if num_of_consecutives==self.condition-1:
                     return True
         return False
 

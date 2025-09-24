@@ -7,7 +7,7 @@ import game as game_mod
 import Minimax as minimax_mod
 
 
-BOARD_DIM = 3                 # Uses your Game/Board dimension
+BOARD_DIM = 4                 # Uses your Game/Board dimension
 WINDOW_SIZE = 600             # Square window
 LINE_WIDTH = 6
 PADDING = 20                  # Inner padding inside each cell for drawing shapes
@@ -71,7 +71,7 @@ def reset_game(dimension):
 
 def ai_move(game_obj):
     # Use your Minimax.best_move with AI piece = 2
-    i, j = minimax_mod.best_move(game_obj.current_board, 2)
+    i, j = minimax_mod.best_move(game_obj.current_board,2)
     if i is not None and j is not None and game_obj.current_board.board_array[i][j] == 0:
         game_obj.current_board.change_state(i, j, 2)
 
