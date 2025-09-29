@@ -21,7 +21,7 @@ def best_move(current_board: board.Board,ai_piece):
     best_i,best_j=None,None
     for i,j in move_filter(current_board,3):
         current_board.change_state(i,j,ai_piece)
-        score=minimax(current_board,0,False,-math.inf,math.inf,ai_piece,max_depth=3)
+        score=minimax(current_board,0,False,-math.inf,math.inf,ai_piece,max_depth=4)
         if score>best_score:
             best_score=score
             best_i=i
@@ -41,7 +41,7 @@ def minimax(current_board: board.Board,depth,is_maximising,alpha:int,beta:int,ai
         return evaluation(current_board,ai_piece)
     if is_maximising:
         best_score=-math.inf
-        for i,j in move_filter(current_board,3):
+        for i,j in  order_evaluation(current_board, move_filter(current_board, 1), ai_piece):
                 current_board.change_state(i,j,ai_piece)
                 score=minimax(current_board,depth+1,False,alpha,beta,ai_piece,max_depth)
                 current_board.change_state(i,j,0)
@@ -52,7 +52,7 @@ def minimax(current_board: board.Board,depth,is_maximising,alpha:int,beta:int,ai
         return best_score
     else:
         best_score=math.inf
-        for i,j in move_filter(current_board,3):
+        for i,j in  order_evaluation(current_board, move_filter(current_board, 3), opponent_piece):
                 current_board.change_state(i,j,opponent_piece)
                 score=minimax(current_board,depth+1,True,alpha,beta,ai_piece,max_depth)
                 current_board.change_state(i,j,0)
@@ -170,25 +170,30 @@ def order_evaluation(current_board: board.Board,moves,ai_piece):
                 if di==0 and dj==0:
                     continue
                 ii,jj=i+di,j+dj
-                if current_board.board_array[ii][jj]==0:
+                if 0<=ii<current_board.dimension and 0<=jj<current_board.dimension and current_board.board_array[ii][jj]!=0:
                     count+=1
-        return count
+        centre=current_board.dimension//2
+        mahhattan_distance=-(abs(i-centre)+abs(j-centre))
+        return count,mahhattan_distance
     for (i,j) in moves:
         if current_board.board_array[i][j]!=0:
             continue
         current_board.board_array[i][j]=ai_piece
         if current_board.check_win(ai_piece):
-            wins.append(i,j)
+            current_board.board_array[i][j]=0
+            wins.append((i,j))
             continue
         current_board.board_array[i][j]=0
         current_board.board_array[i][j]=opponent_piece
         if current_board.check_win(opponent_piece):
-            blocks.append(i,j)
+            current_board.board_array[i][j]=0
+            blocks.append((i,j))
             continue
         current_board.board_array[i][j]=0
-        rests.append(i,j)
+        rests.append((i,j))
     rests.sort(key=lambda m: neighbour_count(*m), reverse=True)
-    
+    return wins+blocks+rests
+
 
 
                 
