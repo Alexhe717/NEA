@@ -21,7 +21,7 @@ def best_move(current_board: board.Board,ai_piece):
     best_i,best_j=None,None
     for i,j in move_filter(current_board,3):
         current_board.change_state(i,j,ai_piece)
-        score=minimax(current_board,0,False,-math.inf,math.inf,ai_piece,max_depth=4)
+        score=minimax(current_board,0,False,-math.inf,math.inf,ai_piece,4,i,j)
         if score>best_score:
             best_score=score
             best_i=i
@@ -29,11 +29,11 @@ def best_move(current_board: board.Board,ai_piece):
         current_board.change_state(i,j,0)
     return best_i,best_j
 
-def minimax(current_board: board.Board,depth,is_maximising,alpha:int,beta:int,ai_piece,max_depth):
+def minimax(current_board: board.Board,depth,is_maximising,alpha:int,beta:int,ai_piece,max_depth,last_i,last_j):
     opponent_piece=opponent(ai_piece)
-    if current_board.check_win(ai_piece):
+    if current_board.check_win_from(last_i,last_j,ai_piece):
         return 10-depth
-    if current_board.check_win(opponent_piece):
+    if current_board.check_win_from(last_i,last_j,opponent_piece):
         return -10+depth
     if current_board.check_draw():
         return 0
@@ -43,7 +43,7 @@ def minimax(current_board: board.Board,depth,is_maximising,alpha:int,beta:int,ai
         best_score=-math.inf
         for i,j in  order_evaluation(current_board, move_filter(current_board, 1), ai_piece):
                 current_board.change_state(i,j,ai_piece)
-                score=minimax(current_board,depth+1,False,alpha,beta,ai_piece,max_depth)
+                score=minimax(current_board,depth+1,False,alpha,beta,ai_piece,max_depth,i,j)
                 current_board.change_state(i,j,0)
                 best_score=max(best_score,score)
                 alpha=max(alpha,best_score)
@@ -54,7 +54,7 @@ def minimax(current_board: board.Board,depth,is_maximising,alpha:int,beta:int,ai
         best_score=math.inf
         for i,j in  order_evaluation(current_board, move_filter(current_board, 3), opponent_piece):
                 current_board.change_state(i,j,opponent_piece)
-                score=minimax(current_board,depth+1,True,alpha,beta,ai_piece,max_depth)
+                score=minimax(current_board,depth+1,True,alpha,beta,ai_piece,max_depth,i,j)
                 current_board.change_state(i,j,0)
                 best_score=min(best_score,score)
                 beta=min(beta,best_score)
@@ -179,13 +179,13 @@ def order_evaluation(current_board: board.Board,moves,ai_piece):
         if current_board.board_array[i][j]!=0:
             continue
         current_board.board_array[i][j]=ai_piece
-        if current_board.check_win(ai_piece):
+        if current_board.check_win_from(i,j,ai_piece):
             current_board.board_array[i][j]=0
             wins.append((i,j))
             continue
         current_board.board_array[i][j]=0
         current_board.board_array[i][j]=opponent_piece
-        if current_board.check_win(opponent_piece):
+        if current_board.check_win_from(i,j,opponent_piece):
             current_board.board_array[i][j]=0
             blocks.append((i,j))
             continue

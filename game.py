@@ -27,19 +27,19 @@ class Game:
 		y=None
 		while (x,y)==(None,None) or board.board_array[x][y]!=0:
 			x,y=self.get_policy_from_player(player)
+			self.last_x=x
+			self.last_y=y
 		board.change_state(x,y,player.piece)
 	def game_start(self):
 		players=[self.player_1,self.player_2]
 		self.turn_number=0
 		self.max_turn=self.board_dimension*self.board_dimension
 		while True:
-			if self.current_board.check_draw():
-				return "draw"
-			if(self.current_board.check_win(self.player_1.piece)):
-				return "player_A won"
-			if(self.current_board.check_win(self.player_2.piece)):
-				return "player_B won"
 			self.make_move(players[self.turn_number%2],self.current_board)
+			if self.current_board.check_win_from(self.last_x,self.last_y,players[self.turn_number%2]):
+				print(f'{self.last_y,players[self.turn_number%2]} won')
+			elif self.current_board.check_draw():
+				print('draw')
 			self.turn_number+=1
 			self.current_board.display()
 # a=Game(3)

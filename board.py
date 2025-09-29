@@ -3,7 +3,7 @@ class Board:
     def __init__(self,dimension):
         self.dimension=dimension
         self.condition=4
-        self.board_array=np.zeros([dimension,dimension])
+        self.board_array=np.zeros([dimension,dimension],dtype=np.int8)
     def display(self):
         print(self.board_array)
     def change_state(self,x,y,piece):
@@ -14,52 +14,34 @@ class Board:
                 if self.board_array[i][j]==0:
                     return False
         return True
-    def check_win(self,piece):
-        for i in range(self.dimension):
-            num_of_consecutives=0
-            for j in range(self.dimension):
-                if self.board_array[i][j]==piece:
-                    num_of_consecutives+=1
-                else:
-                    num_of_consecutives=0
-                if num_of_consecutives==self.condition:
-                    return True
-        for i in range(self.dimension):
-            num_of_consecutives=0
-            for j in range(self.dimension):
-                if self.board_array[j][i]==piece:
-                    num_of_consecutives+=1
-                else:
-                    num_of_consecutives=0
-                if num_of_consecutives==self.condition:
-                    return True
-        
-        for i in range(self.dimension):
-            for j in range(self.dimension):
-                num_of_consecutives=0
-                row,collum=i,j
-                while row+1<self.dimension and collum+1<self.dimension:
-                    if self.board_array[row][collum]==piece and self.board_array[row+1][collum+1]==piece:
-                        num_of_consecutives+=1
-                    else:
-                        num_of_consecutives=0
-                    row+=1
-                    collum+=1
-                    if num_of_consecutives==self.condition-1:
-                        return True
-        for i in range(self.dimension):
-            for j in range(self.dimension):
-                num_of_consecutives=0
-                row,collum=i,j
-                while row+1<self.dimension and collum-1<self.dimension and collum-1>=0:
-                    if self.board_array[row][collum]==piece and self.board_array[row+1][collum-1]==piece:
-                        num_of_consecutives+=1
-                    else:
-                        num_of_consecutives=0
-                    row+=1
-                    collum-=1
-                    if num_of_consecutives==self.condition-1:
-                        return True
+    def check_win_from(self, x, y, piece):
+        if x is None or y is None: 
+            return False
+        n = self.dimension
+        target = self.condition
+
+        def count_direction(dx, dy):
+            cnt = 1
+            i, j = x + dx, y + dy
+            while 0 <= i < n and 0 <= j < n and self.board_array[i][j] == piece:
+                cnt += 1; 
+                i += dx; 
+                j += dy
+            i, j = x - dx, y - dy
+            while 0 <= i < n and 0 <= j < n and self.board_array[i][j] == piece:
+                cnt += 1; 
+                i -= dx; 
+                j -= dy
+            return cnt
+
+        if count_direction(1, 0) >= target:
+            return True
+        if count_direction(0, 1) >= target:
+            return True
+        if count_direction(1, 1) >= target:
+            return True
+        if count_direction(1, -1) >= target:
+            return True
         return False
 
 # a=Board(3)
