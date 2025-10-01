@@ -4,10 +4,14 @@ class Board:
         self.dimension=dimension
         self.condition=4
         self.board_array=np.zeros([dimension,dimension],dtype=np.int8)
+        self.last_move=None
     def display(self):
         print(self.board_array)
     def change_state(self,x,y,piece):
         self.board_array[x][y]=piece
+        if piece != 0:
+            self.last_move = (x, y, piece)
+
     def check_draw(self):
         for i in range(self.dimension):
             for j in range(self.dimension):
@@ -18,7 +22,6 @@ class Board:
         if x is None or y is None: 
             return False
         n = self.dimension
-        target = self.condition
 
         def count_direction(dx, dy):
             cnt = 1
@@ -34,13 +37,13 @@ class Board:
                 j -= dy
             return cnt
 
-        if count_direction(1, 0) >= target:
+        if count_direction(1, 0) >= self.condition:
             return True
-        if count_direction(0, 1) >= target:
+        if count_direction(0, 1) >= self.condition:
             return True
-        if count_direction(1, 1) >= target:
+        if count_direction(1, 1) >= self.condition:
             return True
-        if count_direction(1, -1) >= target:
+        if count_direction(1, -1) >= self.condition:
             return True
         return False
 
