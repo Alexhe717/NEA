@@ -21,7 +21,7 @@ def best_move(current_board: board.Board,ai_piece):
 	best_i,best_j=None,None
 	for i,j in move_filter(current_board,3):
 		current_board.change_state(i,j,ai_piece)
-		score=minimax(current_board,0,False,-math.inf,math.inf,ai_piece,4,last_move=(i,j,ai_piece))
+		score=minimax(current_board,0,False,-math.inf,math.inf,ai_piece,5,last_move=(i,j,ai_piece))
 		if score>best_score:
 			best_score=score
 			best_i=i
@@ -46,7 +46,7 @@ def minimax(current_board: board.Board,depth,is_maximising,alpha:int,beta:int,ai
 		return evaluation(current_board,ai_piece,lx,ly)
 	if is_maximising:
 		best_score=-math.inf
-		moves=order_evaluation(current_board, move_filter(current_board, 2), ai_piece)
+		moves=order_evaluation(current_board, move_filter(current_board, 3), ai_piece)
 		if not moves:
 			return 0
 		for i,j in moves:
@@ -60,7 +60,7 @@ def minimax(current_board: board.Board,depth,is_maximising,alpha:int,beta:int,ai
 		return best_score
 	else:
 		best_score=math.inf
-		moves=order_evaluation(current_board, move_filter(current_board, 2), opponent_piece)
+		moves=order_evaluation(current_board, move_filter(current_board, 3), opponent_piece)
 		if not moves:
 			return 0
 		for i,j in moves:
@@ -99,7 +99,7 @@ def evaluation(current_board: board.Board,ai_piece,x,y):
 		return cnt
 	def count_direction_opp_piece(dx, dy):
 		opponent_piece=opponent(ai_piece)
-		cnt = 1 if current_board.board_array[x][y]==opponent else 0
+		cnt = 1 if current_board.board_array[x][y]==opponent_piece else 0
 		i, j = x + dx, y + dy
 		while 0 <= i < n and 0 <= j < n and current_board.board_array[i][j] == opponent_piece:
 			cnt += 1; 

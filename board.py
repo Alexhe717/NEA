@@ -2,7 +2,7 @@ import numpy as np
 class Board:
     def __init__(self,dimension):
         self.dimension=dimension
-        self.condition=4
+        self.condition=3
         self.board_array=np.zeros([dimension,dimension],dtype=np.int8)
         self.last_move=None
     def display(self):
@@ -46,24 +46,4 @@ class Board:
         if count_direction(1, -1) >= self.condition:
             return True
         return False
-
-# a=Board(3)
-
-# a.change_state(0,0,1)
-# a.change_state(1,1,1)
-# a.change_state(1,2,1)
-# a.change_state(0,1,2)
-# a.change_state(1,0,2)
-# a.change_state(2,2,2)
-# print(a.board_array)
-# print(a.check_win(2))
-# # b=Board(5)
-
-# b.change_state(0,4,3)
-# b.change_state(1,3,3)
-# b.change_state(2,2,3)
-# b.change_state(3,1,3)
-# b.change_state(4,0,3)
-# print(b.board_array)
-# print(b.check_win(3))
 
