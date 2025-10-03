@@ -21,7 +21,7 @@ def best_move(current_board: board.Board,ai_piece):
 	best_i,best_j=None,None
 	for i,j in move_filter(current_board,3):
 		current_board.change_state(i,j,ai_piece)
-		score=minimax(current_board,0,False,-math.inf,math.inf,ai_piece,4,last_move=(i,j,ai_piece))
+		score=minimax(current_board,0,False,-math.inf,math.inf,ai_piece,10,last_move=(i,j,ai_piece))
 		if score>best_score:
 			best_score=score
 			best_i=i
