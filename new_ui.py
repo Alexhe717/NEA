@@ -7,8 +7,8 @@ import game as game_mod
 import minimax as minimax_mod
 
 
-BOARD_DIM = 3                 
-WINDOW_SIZE = 600             
+BOARD_DIM = 4                 
+WINDOW_SIZE = 1000             
 LINE_WIDTH = 6
 PADDING = 20                 
 FPS = 60
@@ -67,7 +67,7 @@ def reset_game(dimension):
     g = game_mod.Game(dimension)
 
     if hasattr(g.current_board, "condition"):
-        g.current_board.condition = 3
+        g.current_board.condition = 4
     current_turn_piece = 1
     return g, current_turn_piece
 

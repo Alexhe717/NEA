@@ -7,7 +7,7 @@ import game as game_mod
 import minimax as minimax_mod
 
 
-BOARD_DIM = 3                 # Uses your Game/Board dimension
+BOARD_DIM = 4                 # Uses your Game/Board dimension
 WINDOW_SIZE = 600             # Square window
 LINE_WIDTH = 6
 PADDING = 20                  # Inner padding inside each cell for drawing shapes

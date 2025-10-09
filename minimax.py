@@ -2,6 +2,7 @@ import board
 import game
 import math
 import numpy as np
+import tt
 def move_filter(current_board: board.Board,radius):
 	occupied=np.argwhere(current_board.board_array!=0)
 	if occupied.size==0:
@@ -15,21 +16,41 @@ def move_filter(current_board: board.Board,radius):
 					moves.add((x,y))
 	return list(moves)
 
+def adaptive_search_depth(current_board:board.Board):
+	stones=np.count_nonzero(current_board.board_array)
+	if stones<=2:
+		return 5
+	if stones<=5:
+		return 8
+	if stones<=8:
+		return 10
+	else:
+		return 6
 
 def best_move(current_board: board.Board,ai_piece):
+	search_depth=adaptive_search_depth(current_board)
 	best_score=-math.inf
 	best_i,best_j=None,None
-	for i,j in move_filter(current_board,3):
+	for i,j in move_filter(current_board,2):
 		current_board.change_state(i,j,ai_piece)
-		score=minimax(current_board,0,False,-math.inf,math.inf,ai_piece,10,last_move=(i,j,ai_piece))
-		if score>best_score:
-			best_score=score
-			best_i=i
-			best_j=j
-		current_board.change_state(i,j,0)
+		score=minimax(current_board,0,False,-math.inf,math.inf,ai_piece,search_depth,last_move=(i,j,ai_piece))
+	if score>best_score:
+		best_score=score
+		best_i=i
+		best_j=j
+	current_board.change_state(i,j,0)
 	return best_i,best_j
 
 def minimax(current_board: board.Board,depth,is_maximising,alpha:int,beta:int,ai_piece,max_depth,last_move):
+	opponent_piece=opponent(ai_piece)
+	if is_maximising:
+		side_to_move= ai_piece
+	else:
+		side_to_move=opponent_piece
+	key=tt.key(current_board.board_array,side_to_move)
+	tt_value=tt.probe(key,depth,alpha,beta)
+	if tt_value is not None:
+		return tt_value
 	if last_move is not None:
 		lx,ly,lp=last_move
 		if current_board.check_win_from(lx,ly,lp):
@@ -37,7 +58,6 @@ def minimax(current_board: board.Board,depth,is_maximising,alpha:int,beta:int,ai
 				return 10-depth
 			else:
 				return -10+depth
-	opponent_piece=opponent(ai_piece)
 	if (max_depth is not None) and (depth>=max_depth):
 		lx=None
 		ly=None
@@ -56,7 +76,15 @@ def minimax(current_board: board.Board,depth,is_maximising,alpha:int,beta:int,ai
 			best_score=max(best_score,score)
 			alpha=max(alpha,best_score)
 			if beta<=alpha:
+				alpha0,beta0=alpha,beta
+				key=tt.key(current_board.board_array,side_to_move)
+				tt_value=tt.probe(key,depth,alpha,beta)
+				tt.store(key,depth,alpha0,beta0,best_score)
 				return best_score
+		alpha0,beta0=alpha,beta
+		key=tt.key(current_board.board_array,side_to_move)
+		tt_value=tt.probe(key,depth,alpha,beta)
+		tt.store(key,depth,alpha0,beta0,best_score)
 		return best_score
 	else:
 		best_score=math.inf
@@ -70,8 +98,15 @@ def minimax(current_board: board.Board,depth,is_maximising,alpha:int,beta:int,ai
 			best_score=min(best_score,score)
 			beta=min(beta,best_score)
 			if beta<=alpha:
+				alpha0,beta0=alpha,beta
+				key=tt.key(current_board.board_array,side_to_move)
+				tt_value=tt.probe(key,depth,alpha,beta)
+				tt.store(key,depth,alpha0,beta0,best_score)
 				return best_score
-
+		alpha0,beta0=alpha,beta
+		key=tt.key(current_board.board_array,side_to_move)
+		tt_value=tt.probe(key,depth,alpha,beta)
+		tt.store(key,depth,alpha0,beta0,best_score)
 		return best_score
 def opponent(piece):
 	if piece==1:
@@ -99,7 +134,7 @@ def evaluation(current_board: board.Board,ai_piece,x,y):
 		return cnt
 	def count_direction_opp_piece(dx, dy):
 		opponent_piece=opponent(ai_piece)
-		cnt = 1 if current_board.board_array[x][y]==opponent else 0
+		cnt = 1 if current_board.board_array[x][y]==opponent_piece else 0
 		i, j = x + dx, y + dy
 		while 0 <= i < n and 0 <= j < n and current_board.board_array[i][j] == opponent_piece:
 			cnt += 1; 
