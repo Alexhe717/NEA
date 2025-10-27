@@ -7,7 +7,7 @@ import game as game_mod
 import minimax as minimax_mod
 
 
-BOARD_DIM = 4                 
+BOARD_DIM = 3                 
 WINDOW_SIZE = 1000             
 LINE_WIDTH = 6
 PADDING = 20                 

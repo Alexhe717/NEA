@@ -1,6 +1,6 @@
 EXACT, LOWER, UPPER = 0,1,2
 TT = {}
-DEPTH, FLAG, SCORE, MOVE = 0,1,2,3
+DEPTH, FLAG, SCORE = 0,1,2
 
 def key(board_arr, side_to_move): #get hashable key
     return (board_arr.shape, board_arr.tobytes(order="C"), int(side_to_move)) 
@@ -9,12 +9,13 @@ def probe(key, depth, alpha, beta):
     value = TT.get(key)#get value from the hash table
     if value and value[DEPTH] >= depth:#only trust if it is a deeper search
         score, flag = value[SCORE], value[FLAG]
-        if flag == EXACT or (flag == LOWER and  score>= beta) or (flag == UPPER and score <= alpha):
-            return score, value[MOVE]
-    if value:
-        return value[MOVE]
-    else:
-        return None
+        if flag == EXACT:
+            return score
+        if flag == LOWER and score >= beta:
+            return score
+        if flag == UPPER and score <= alpha:
+            return score
+    return None
 
 def store(key, depth, alpha0, beta0, score):
     if alpha0 < score < beta0:
