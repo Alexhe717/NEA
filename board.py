@@ -2,7 +2,7 @@ import numpy as np
 class Board:
     def __init__(self,dimension):
         self.dimension=dimension
-        self.condition=3
+        self.condition=4
         self.board_array=np.zeros([dimension,dimension],dtype=np.int8)
         self.last_move=None
     def display(self):

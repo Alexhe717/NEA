@@ -14,18 +14,29 @@ def move_filter(current_board: board.Board,radius):
 				x,y=i+di,j+dj
 				if 0<=x<current_board.dimension and 0<=y<current_board.dimension and current_board.board_array[x][y]==0:
 					moves.add((x,y))
-	return list(moves)
+	pruned = []
+	for (x, y) in moves:
+		has_neighbour = False
+		for dx in (-1, 0, 1):
+			for dy in (-1, 0, 1):
+				if dx == 0 and dy == 0: 
+					continue
+				xx, yy = x + dx, y + dy
+				if 0 <= xx < current_board.dimension and 0 <= yy < current_board.dimension and current_board.board_array[xx][yy] != 0:
+					has_neighbour = True
+					break
+			if has_neighbour: 
+				break
+		if has_neighbour:
+			pruned.append((x, y))
+	return pruned if pruned else list(moves)
 
 def adaptive_search_depth(current_board:board.Board):
 	stones=np.count_nonzero(current_board.board_array)
-	if stones<=2:
-		return 5
-	if stones<=5:
-		return 8
-	if stones<=8:
-		return 10
-	else:
-		return 6
+	if stones <= 2:  return 4
+	if stones <= 6:  return 6
+	if stones <= 9:  return 7
+	return 6
 
 def best_move(current_board: board.Board,ai_piece):
 	search_depth=adaptive_search_depth(current_board)
