@@ -2,6 +2,7 @@ import board
 import game
 import math
 import numpy as np
+import tt
 def move_filter(current_board: board.Board,radius):
 	occupied=np.argwhere(current_board.board_array!=0)
 	if occupied.size==0:
@@ -13,15 +14,37 @@ def move_filter(current_board: board.Board,radius):
 				x,y=i+di,j+dj
 				if 0<=x<current_board.dimension and 0<=y<current_board.dimension and current_board.board_array[x][y]==0:
 					moves.add((x,y))
-	return list(moves)
+	pruned = []
+	for (x, y) in moves:
+		has_neighbour = False
+		for dx in (-1, 0, 1):
+			for dy in (-1, 0, 1):
+				if dx == 0 and dy == 0: 
+					continue
+				xx, yy = x + dx, y + dy
+				if 0 <= xx < current_board.dimension and 0 <= yy < current_board.dimension and current_board.board_array[xx][yy] != 0:
+					has_neighbour = True
+					break
+			if has_neighbour: 
+				break
+		if has_neighbour:
+			pruned.append((x, y))
+	return pruned if pruned else list(moves)
 
+def adaptive_search_depth(current_board:board.Board):
+	stones=np.count_nonzero(current_board.board_array)
+	if stones <= 2:  return 4
+	if stones <= 6:  return 6
+	if stones <= 9:  return 7
+	return 6
 
 def best_move(current_board: board.Board,ai_piece):
+	search_depth=adaptive_search_depth(current_board)
 	best_score=-math.inf
 	best_i,best_j=None,None
-	for i,j in move_filter(current_board,3):
+	for i,j in move_filter(current_board,2):
 		current_board.change_state(i,j,ai_piece)
-		score=minimax(current_board,0,False,-math.inf,math.inf,ai_piece,5,last_move=(i,j,ai_piece))
+		score=minimax(current_board,0,False,-math.inf,math.inf,ai_piece,search_depth,last_move=(i,j,ai_piece))
 		if score>best_score:
 			best_score=score
 			best_i=i
@@ -30,6 +53,19 @@ def best_move(current_board: board.Board,ai_piece):
 	return best_i,best_j
 
 def minimax(current_board: board.Board,depth,is_maximising,alpha:int,beta:int,ai_piece,max_depth,last_move):
+	opponent_piece=opponent(ai_piece)
+	if is_maximising:
+		side_to_move= ai_piece
+	else:
+		side_to_move=opponent_piece
+	if max_depth is None:
+		depth_left=None
+	else:
+		depth_left=max_depth-depth
+	key=tt.key(current_board.board_array,side_to_move)
+	tt_value=tt.probe(key,depth_left,alpha,beta)
+	if tt_value is not None:
+		return tt_value
 	if last_move is not None:
 		lx,ly,lp=last_move
 		if current_board.check_win_from(lx,ly,lp):
@@ -37,13 +73,13 @@ def minimax(current_board: board.Board,depth,is_maximising,alpha:int,beta:int,ai
 				return 10-depth
 			else:
 				return -10+depth
-	opponent_piece=opponent(ai_piece)
 	if (max_depth is not None) and (depth>=max_depth):
 		lx=None
 		ly=None
 		if last_move is not None:
 			lx,ly,_=last_move
 		return evaluation(current_board,ai_piece,lx,ly)
+	alpha0,beta0=alpha,beta
 	if is_maximising:
 		best_score=-math.inf
 		moves=order_evaluation(current_board, move_filter(current_board, 3), ai_piece)
@@ -53,10 +89,14 @@ def minimax(current_board: board.Board,depth,is_maximising,alpha:int,beta:int,ai
 			current_board.change_state(i,j,ai_piece)
 			score=minimax(current_board,depth+1,False,alpha,beta,ai_piece,max_depth,last_move=(i,j,ai_piece))
 			current_board.change_state(i,j,0)
-			best_score=max(best_score,score)
-			alpha=max(alpha,best_score)
-			if beta<=alpha:
+			if score > best_score:
+				best_score = score
+			if best_score > alpha:
+				alpha = best_score
+			if beta <= alpha:
+				tt.store(key, depth_left, alpha0, beta0, best_score)
 				return best_score
+		tt.store(key,depth_left,alpha0,beta0,best_score)
 		return best_score
 	else:
 		best_score=math.inf
@@ -67,11 +107,14 @@ def minimax(current_board: board.Board,depth,is_maximising,alpha:int,beta:int,ai
 			current_board.change_state(i,j,opponent_piece)
 			score=minimax(current_board,depth+1,True,alpha,beta,ai_piece,max_depth,last_move=(i,j,opponent_piece))
 			current_board.change_state(i,j,0)
-			best_score=min(best_score,score)
-			beta=min(beta,best_score)
-			if beta<=alpha:
+			if score < best_score:
+				best_score = score
+			if best_score < beta:
+				beta = best_score
+			if beta <= alpha:
+				tt.store(key,depth_left,alpha0,beta0,best_score)
 				return best_score
-
+		tt.store(key,depth_left,alpha0,beta0,best_score)
 		return best_score
 def opponent(piece):
 	if piece==1:

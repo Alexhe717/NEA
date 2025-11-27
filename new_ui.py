@@ -7,16 +7,16 @@ import game as game_mod
 import minimax as minimax_mod
 
 
-BOARD_DIM = 4                 # Uses your Game/Board dimension
-WINDOW_SIZE = 600             # Square window
+BOARD_DIM = 5                 
+WINDOW_SIZE = 1000             
 LINE_WIDTH = 6
-PADDING = 20                  # Inner padding inside each cell for drawing shapes
+PADDING = 20                 
 FPS = 60
 
 BG_COLOR = (245, 245, 245)
 GRID_COLOR = (50, 50, 50)
-P1_COLOR = (40, 120, 220)     # Player 1 (piece=1) - circle
-P2_COLOR = (220, 60, 60)      # Player 2 (piece=2) - cross
+P1_COLOR = (40, 120, 220)     
+P2_COLOR = (220, 60, 60)      
 TEXT_COLOR = (20, 20, 20)
 OVERLAY_BG = (255, 255, 255)
 
@@ -38,10 +38,10 @@ def draw_pieces(surface, board_array, cell):
             cy = r * cell + cell // 2
             half = cell // 2 - PADDING
             if piece == 1:
-                # Circle
+
                 pygame.draw.circle(surface, P1_COLOR, (cx, cy), half, LINE_WIDTH)
             elif piece == 2:
-                # Cross
+
                 pygame.draw.line(surface, P2_COLOR, (cx - half, cy - half), (cx + half, cy + half), LINE_WIDTH)
                 pygame.draw.line(surface, P2_COLOR, (cx + half, cy - half), (cx - half, cy + half), LINE_WIDTH)
 
@@ -63,28 +63,52 @@ def show_message(surface, text, subtext=None):
         surface.blit(st_surf, st_rect)
 
 def reset_game(dimension):
-    # Use your Game class to host the current Board and players
+
     g = game_mod.Game(dimension)
-    # We'll treat Player 1 (piece=1) as the human, Player 2 (piece=2) as the AI.
+
+    if hasattr(g.current_board, "condition"):
+        g.current_board.condition = 4
     current_turn_piece = 1
     return g, current_turn_piece
 
-def ai_move(game_obj):
-    # Use your Minimax.best_move with AI piece = 2
-    i, j = minimax_mod.best_move(game_obj.current_board,2)
+def ai_move(game_obj:game_mod):
+    """AI places piece=2 and returns (i, j) of the move, or None."""
+    i = j = None
+    try:
+        res = minimax_mod.best_move(game_obj.current_board, 2)
+        if isinstance(res, tuple) and len(res) >= 2:
+            i, j = int(res[0]), int(res[1])
+    except Exception:
+        i = j = None
+
+
+    if i is None or j is None or game_obj.current_board.board_array[i][j] != 0:
+        n = game_obj.current_board.dimension
+        found = False
+        for r in range(n):
+            for c in range(n):
+                if game_obj.current_board.board_array[r][c] == 0:
+                    i, j = r, c
+                    found = True
+                    break
+            if found:
+                break
+
     if i is not None and j is not None and game_obj.current_board.board_array[i][j] == 0:
         game_obj.current_board.change_state(i, j, 2)
+        return (i, j)
+    return None
 
 def human_try_place(game_obj, pos, cell):
+    """Place piece=1 for human and return (r, c) if placed, else None."""
     x, y = pos
     r = y // cell
     c = x // cell
     n = game_obj.current_board.dimension
-    if 0 <= r < n and 0 <= c < n:
-        if game_obj.current_board.board_array[r][c] == 0:
-            game_obj.current_board.change_state(r, c, 1)
-            return True
-    return False
+    if 0 <= r < n and 0 <= c < n and game_obj.current_board.board_array[r][c] == 0:
+        game_obj.current_board.change_state(r, c, 1)
+        return (r, c)
+    return None
 
 def main():
     pygame.init()
@@ -114,32 +138,35 @@ def main():
                     outcome_text = None
 
             if not game_over and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                # Human move
                 if turn_piece == 1:
-                    placed = human_try_place(game_obj, pygame.mouse.get_pos(), cell)
-                    if placed:
-                        # Check win/draw with your Board
-                        if game_obj.current_board.check_win(1):
+                    move = human_try_place(game_obj, pygame.mouse.get_pos(), cell)
+                    if move:
+                        hr, hc = move
+
+                        if game_obj.current_board.check_win_from(hr, hc, 1):
                             game_over = True
                             outcome_text = "You (Player 1) win!"
                         elif game_obj.current_board.check_draw():
                             game_over = True
                             outcome_text = "Draw!"
                         else:
-                            # AI's turn
-                            turn_piece = 2
-                            ai_move(game_obj)
-                            if game_obj.current_board.check_win(2):
-                                game_over = True
-                                outcome_text = "AI (Player 2) wins!"
-                            elif game_obj.current_board.check_draw():
-                                game_over = True
-                                outcome_text = "Draw!"
-                            else:
-                                # Back to human
-                                turn_piece = 1
 
-        # Render
+                            turn_piece = 2
+                            ai_mv = ai_move(game_obj)
+                            if ai_mv:
+                                ar, ac = ai_mv
+
+                                if game_obj.current_board.check_win_from(ar, ac, 2):
+                                    game_over = True
+                                    outcome_text = "AI (Player 2) wins!"
+                                elif game_obj.current_board.check_draw():
+                                    game_over = True
+                                    outcome_text = "Draw!"
+                                else:
+
+                                    turn_piece = 1
+
+
         screen.fill(BG_COLOR)
         draw_grid(screen, BOARD_DIM, cell)
         draw_pieces(screen, game_obj.current_board.board_array, cell)
