@@ -65,9 +65,6 @@ def show_message(surface, text, subtext=None):
 def reset_game(dimension):
 
     g = game_mod.Game(dimension)
-
-    if hasattr(g.current_board, "condition"):
-        g.current_board.condition = 4
     current_turn_piece = 1
     return g, current_turn_piece
 

@@ -70,9 +70,9 @@ def minimax(current_board: board.Board,depth,is_maximising,alpha:int,beta:int,ai
 		lx,ly,lp=last_move
 		if current_board.check_win_from(lx,ly,lp):
 			if lp==ai_piece:
-				return 10-depth
+				return 100000-depth
 			else:
-				return -10+depth
+				return -100000+depth
 	if (max_depth is not None) and (depth>=max_depth):
 		lx=None
 		ly=None
@@ -121,58 +121,46 @@ def opponent(piece):
 		return 2
 	if piece==2:
 		return 1
-
-def evaluation(current_board: board.Board,ai_piece,x,y):
-	if x is None or y is None: 
+def count_pieces_in_line(current_board: board.Board, x, y, piece, dx, dy):
+	if x is None or y is None:
 		return 0
-	n = current_board.dimension
-	target = current_board.condition-1
-	def count_direction_ai_piece(dx, dy):
-		cnt = 1 if current_board.board_array[x][y]==ai_piece else 0
-		i, j = x + dx, y + dy
-		while 0 <= i < n and 0 <= j < n and current_board.board_array[i][j] == ai_piece:
-			cnt += 1; 
-			i += dx; 
-			j += dy
-		i, j = x - dx, y - dy
-		while 0 <= i < n and 0 <= j < n and current_board.board_array[i][j] == ai_piece:
-			cnt += 1; 
-			i -= dx; 
-			j -= dy
-		return cnt
-	def count_direction_opp_piece(dx, dy):
-		opponent_piece=opponent(ai_piece)
-		cnt = 1 if current_board.board_array[x][y]==opponent_piece else 0
-		i, j = x + dx, y + dy
-		while 0 <= i < n and 0 <= j < n and current_board.board_array[i][j] == opponent_piece:
-			cnt += 1; 
-			i += dx; 
-			j += dy
-		i, j = x - dx, y - dy
-		while 0 <= i < n and 0 <= j < n and current_board.board_array[i][j] == opponent_piece:
-			cnt += 1; 
-			i -= dx; 
-			j -= dy
-		return cnt
-	if count_direction_opp_piece(1, 0) >= target:
-		return -5
-	if count_direction_opp_piece(0, 1) >= target:
-		return -5
-	if count_direction_opp_piece(1, 1) >= target:
-		return -5
-	if count_direction_opp_piece(1, -1) >= target:
-		return -5
-	if count_direction_ai_piece(1, 0) >= target:
-		return 5
-	if count_direction_ai_piece(0, 1) >= target:
-		return 5
-	if count_direction_ai_piece(1, 1) >= target:
-		return 5
-	if count_direction_ai_piece(1, -1) >= target:
-		return 5
-	
-	return 0
+	if current_board.board_array[x][y] != piece:
+		return 0
 
+	n = current_board.dimension
+	cnt = 1
+
+	i, j = x + dx, y + dy
+	while 0 <= i < n and 0 <= j < n and current_board.board_array[i][j] == piece:
+		cnt += 1
+		i += dx
+		j += dy
+
+	i, j = x - dx, y - dy
+	while 0 <= i < n and 0 <= j < n and current_board.board_array[i][j] == piece:
+		cnt += 1
+		i -= dx
+		j -= dy
+
+	return cnt
+def evaluation(current_board: board.Board,ai_piece,x,y):
+	if x is None or y is None:
+		return 0
+
+	target = current_board.condition - 1
+	opp = opponent(ai_piece)
+	directions = [(1,0),(0,1),(1,1),(1,-1)]
+
+	for dx, dy in directions:
+		if count_pieces_in_line(current_board, x, y, opp, dx, dy) >= target:
+			return -5
+
+
+	for dx, dy in directions:
+		if count_pieces_in_line(current_board, x, y, ai_piece, dx, dy) >= target:
+			return 5
+
+	return 0
 def order_evaluation(current_board: board.Board,moves,ai_piece):
 	opponent_piece=opponent(ai_piece)
 	wins,blocks,rests=[],[],[]

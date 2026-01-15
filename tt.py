@@ -1,7 +1,7 @@
 EXACT, LOWER, UPPER = 0,1,2
 TT = {}
 DEPTH, FLAG, SCORE = 0,1,2
-
+MAX_TT_SIZE = 1000000
 def key(board_arr, side_to_move): #get hashable key
     return (board_arr.shape, board_arr.tobytes(order="C"), int(side_to_move)) 
 
@@ -18,6 +18,8 @@ def probe(key, depth, alpha, beta):
     return None
 
 def store(key, depth, alpha0, beta0, score):
+    if len(TT) > MAX_TT_SIZE:
+        TT.clear()
     if alpha0 < score < beta0:
         flag=EXACT
     elif score >=beta0:
