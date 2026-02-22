@@ -116,11 +116,13 @@ def minimax(current_board: board.Board,depth,is_maximising,alpha:int,beta:int,ai
 				return best_score
 		tt.store(key,depth_left,alpha0,beta0,best_score)
 		return best_score
+	
 def opponent(piece):
 	if piece==1:
 		return 2
 	if piece==2:
 		return 1
+	
 def count_pieces_in_line(current_board: board.Board, x, y, piece, dx, dy):
 	if x is None or y is None:
 		return 0
@@ -143,6 +145,7 @@ def count_pieces_in_line(current_board: board.Board, x, y, piece, dx, dy):
 		j -= dy
 
 	return cnt
+
 def evaluation(current_board: board.Board,ai_piece,x,y):
 	if x is None or y is None:
 		return 0
@@ -161,6 +164,7 @@ def evaluation(current_board: board.Board,ai_piece,x,y):
 			return 5
 
 	return 0
+
 def order_evaluation(current_board: board.Board,moves,ai_piece):
 	opponent_piece=opponent(ai_piece)
 	wins,blocks,rests=[],[],[]

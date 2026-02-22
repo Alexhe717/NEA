@@ -6,8 +6,10 @@ class Board:
 		self.board_array=np.zeros([dimension,dimension],dtype=np.int8)
 		self.last_move=None
 		self.empty_count = dimension * dimension
+		
 	def display(self):
 		print(self.board_array)
+
 	def change_state(self,x,y,piece):
 		if not (0 <= x < self.dimension and 0 <= y < self.dimension):
 			raise IndexError(f"Move ({x}, {y}) is out of bounds for board size {self.dimension}")
@@ -20,6 +22,7 @@ class Board:
 
 	def check_draw(self):
 		return self.empty_count == 0
+	
 	def check_win_from(self, x, y, piece):
 		if x is None or y is None: 
 			return False
