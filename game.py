@@ -1,47 +1,39 @@
 import board
-import random
 import numpy as np
+import tt
+import minimax
 class Player:
 	def __init__(self,name,piece):
 		self.name=name
 		self.piece=piece
-	def policy(self,board):
-		board_dimension=np.size(board.board_array,0)
-		return random.randint(0,board_dimension-1),random.randint(0,board_dimension-1)
+	def policy(self,current_board:board.Board):
+		if self.name=='human':
+			pass
+		if self.name=='ai':
+			return minimax.best_move(current_board, self.piece)
+		raise ValueError(f'Unknown player type: {self.name}')
 class Game:
-	def __init__(self,board_dimension):
-		self.board_dimension=board_dimension
-		self.current_board=board.Board(board_dimension)
-		self.player_1=Player('1',1)
-		self.player_2=Player('2',2)
-	def check_if_cell_occupied(self,x,y):
-		if self.current_board.board_array[x][y]==0:
-			return True
-		else:
-			return False
-	def get_policy_from_player(self,player):
-		return player.policy(self.current_board)
+	def __init__(self,board_dimension,win_condition=5):
+		self.board_dimension = board_dimension
+		self.current_board = board.Board(board_dimension)
+		self.current_board.condition = win_condition
+		self.player_1 = Player('human', 1)
+		self.player_2 = Player('ai', 2)
+		self.players = [self.player_1, self.player_2]
 
-	def make_move(self,player,board):
-		x=None
-		y=None
-		while (x,y)==(None,None) or board.board_array[x][y]!=0:
-			x,y=self.get_policy_from_player(player)
-			self.last_x=x
-			self.last_y=y
-		board.change_state(x,y,player.piece)
-	def game_start(self):
-		players=[self.player_1,self.player_2]
-		self.turn_number=0
-		self.max_turn=self.board_dimension*self.board_dimension
-		while True:
-			self.make_move(players[self.turn_number%2],self.current_board)
-			if self.current_board.check_win_from(self.last_x,self.last_y,players[self.turn_number%2].piece):
-				print(f'{self.last_y,players[self.turn_number%2]} won')
-			elif self.current_board.check_draw():
-				print('draw')
-			self.turn_number+=1
-			self.current_board.display()
-# a=Game(3)
-# print(a.game_start())
-		
+		self.turn_number = 0
+		self.last_move = None
+		tt.clear()
+
+	def make_move(self, x, y):
+		player = self.current_player
+		self.current_board.change_state(x, y, player.piece)
+		self.last_move = (x, y)
+		self.turn_number += 1
+		if self.current_board.check_win_from(x, y, player.piece):
+			return 'win'
+		if self.current_board.check_draw():
+			return 'draw'
+			
+		return None
+
