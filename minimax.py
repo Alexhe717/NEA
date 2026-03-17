@@ -27,40 +27,51 @@ class Config:
 
 
 DEFAULT_CONFIG = Config()
-def move_filter(current_board: board.Board,radius):
-	occupied=np.argwhere(current_board.board_array!=0)
-	if occupied.size==0:
-		return [(current_board.dimension//2,current_board.dimension//2)]
-	moves=set()
-	for i,j in occupied:
-		for di in range(-radius,radius+1):
-			for dj in range(-radius,radius+1):
-				x,y=i+di,j+dj
-				if 0<=x<current_board.dimension and 0<=y<current_board.dimension and current_board.board_array[x][y]==0:
-					moves.add((x,y))
-	pruned = []
-	for (x, y) in moves:
-		has_neighbour = False
-		for dx in (-1, 0, 1):
-			for dy in (-1, 0, 1):
-				if dx == 0 and dy == 0: 
-					continue
-				xx, yy = x + dx, y + dy
-				if 0 <= xx < current_board.dimension and 0 <= yy < current_board.dimension and current_board.board_array[xx][yy] != 0:
-					has_neighbour = True
-					break
-			if has_neighbour: 
-				break
-		if has_neighbour:
-			pruned.append((x, y))
-	return pruned if pruned else list(moves)
 
-def adaptive_search_depth(current_board:board.Board):
-	stones=np.count_nonzero(current_board.board_array)
-	if stones <= 2:  return 4
-	if stones <= 6:  return 6
-	if stones <= 9:  return 7
-	return 6
+def move_filter(current_board: board.Board, radius=2):
+    occupied = np.argwhere(current_board.board_array != 0)
+    if occupied.size == 0:
+        centre = current_board.dimension // 2
+        return [(centre, centre)]
+
+    moves = set()
+    board_size = current_board.dimension
+    for row, col in occupied:
+        for d_row in range(-radius, radius + 1):
+            for d_col in range(-radius, radius + 1):
+                r, c = row + d_row, col + d_col
+                if 0 <= r < board_size and 0 <= c < board_size and current_board.board_array[r][c] == 0:
+                    moves.add((int(r), int(c)))
+
+    pruned = []
+    for row, col in moves:
+        has_neighbour = False
+        for d_row in (-1, 0, 1):
+            for d_col in (-1, 0, 1):
+                if d_row == 0 and d_col == 0:
+                    continue
+                adj_row, adj_col = row + d_row, col + d_col
+                if 0 <= adj_row < board_size and 0 <= adj_col < board_size and current_board.board_array[adj_row][adj_col] != 0:
+                    has_neighbour = True
+                    break
+            if has_neighbour:
+                break
+        if has_neighbour:
+            pruned.append((row, col))
+    return pruned if pruned else list(moves)
+
+def adaptive_search_depth(current_board: board.Board):
+    stones = np.count_nonzero(current_board.board_array)
+    board_size = current_board.dimension
+    if board_size <= 5:
+        return 7
+    if stones <= 2:
+        return 4
+    if stones <= 10:
+        return 5
+    if stones <= 24:
+        return 6
+    return 5
 
 def best_move(current_board: board.Board, ai_piece, config: Config = None):
     config = config or DEFAULT_CONFIG
@@ -199,81 +210,114 @@ def opponent(piece):
 	if piece==2:
 		return 1
 	
-def count_pieces_in_line(current_board: board.Board, x, y, piece, dx, dy):
-	if x is None or y is None:
-		return 0
-	if current_board.board_array[x][y] != piece:
-		return 0
+def line_info(grid, row, col, piece, d_row, d_col):
+    board_size = grid.shape[0]
+    streak = 1
+    open_ends = 0
 
-	n = current_board.dimension
-	cnt = 1
+    check_row, check_col = row + d_row, col + d_col
+    while 0 <= check_row < board_size and 0 <= check_col < board_size and grid[check_row, check_col] == piece:
+        streak += 1
+        check_row += d_row
+        check_col += d_col
+    if 0 <= check_row < board_size and 0 <= check_col < board_size and grid[check_row, check_col] == 0:
+        open_ends += 1
 
-	i, j = x + dx, y + dy
-	while 0 <= i < n and 0 <= j < n and current_board.board_array[i][j] == piece:
-		cnt += 1
-		i += dx
-		j += dy
+    check_row, check_col = row - d_row, col - d_col
+    while 0 <= check_row < board_size and 0 <= check_col < board_size and grid[check_row, check_col] == piece:
+        streak += 1
+        check_row -= d_row
+        check_col -= d_col
+    if 0 <= check_row < board_size and 0 <= check_col < board_size and grid[check_row, check_col] == 0:
+        open_ends += 1
 
-	i, j = x - dx, y - dy
-	while 0 <= i < n and 0 <= j < n and current_board.board_array[i][j] == piece:
-		cnt += 1
-		i -= dx
-		j -= dy
+    return streak, open_ends
 
-	return cnt
+def pattern_score(streak, open_ends, win_condition):
+    if streak >= win_condition:
+        return WIN_SCORE
+    if streak == win_condition - 1:
+        if open_ends == 2:
+            return 100_000
+        if open_ends == 1:
+            return 10_000
+    if streak == win_condition - 2:
+        if open_ends == 2:
+            return 2_500
+        if open_ends == 1:
+            return 300
+    if streak == win_condition - 3:
+        if open_ends == 2:
+            return 120
+        if open_ends == 1:
+            return 20
+    if streak == 2 and open_ends == 2:
+        return 8
+    return 0
 
-def evaluation(current_board: board.Board,ai_piece,x,y):
-	if x is None or y is None:
-		return 0
+def total_move_score(current_board: board.Board, row, col, piece):
+    grid = current_board.board_array
+    win_condition = current_board.condition
+    total = 0
+    centre = current_board.dimension // 2
+    total -= abs(row - centre) + abs(col - centre)
 
-	target = current_board.condition - 1
-	opp = opponent(ai_piece)
-	directions = [(1,0),(0,1),(1,1),(1,-1)]
+    for d_row, d_col in DIRECTIONS:
+        streak, open_ends = line_info(grid, row, col, piece, d_row, d_col)
+        total += pattern_score(streak, open_ends, win_condition)
+    return total
 
-	for dx, dy in directions:
-		if count_pieces_in_line(current_board, x, y, opp, dx, dy) >= target:
-			return -5
+def evaluate_last_move(current_board: board.Board, ai_piece, row, col):
+    if row is None or col is None:
+        return 0
 
+    grid = current_board.board_array
+    piece = grid[row, col]
+    if piece == 0:
+        return 0
 
-	for dx, dy in directions:
-		if count_pieces_in_line(current_board, x, y, ai_piece, dx, dy) >= target:
-			return 5
+    score = 0
+    opp_piece = opponent(ai_piece)
 
-	return 0
+    for d_row, d_col in DIRECTIONS:
+        ai_streak, ai_open = line_info(grid, row, col, ai_piece, d_row, d_col) if piece == ai_piece else (0, 0)
+        opp_streak, opp_open = line_info(grid, row, col, opp_piece, d_row, d_col) if piece == opp_piece else (0, 0)
+        score += pattern_score(ai_streak, ai_open, current_board.condition)
+        score -= pattern_score(opp_streak, opp_open, current_board.condition)
 
-def order_evaluation(current_board: board.Board,moves,ai_piece):
-	opponent_piece=opponent(ai_piece)
-	wins,blocks,rests=[],[],[]
-	def neighbour_count(i,j):
-		count=0
-		for di in (-1,0,1):
-			for dj in (-1,0,1):
-				if di==0 and dj==0:
-					continue
-				ii,jj=i+di,j+dj
-				if 0<=ii<current_board.dimension and 0<=jj<current_board.dimension and current_board.board_array[ii][jj]!=0:
-					count+=1
-		centre=current_board.dimension//2
-		mahhattan_distance=-(abs(i-centre)+abs(j-centre))
-		return count,mahhattan_distance
-	for (i,j) in moves:
-		if current_board.board_array[i][j]!=0:
-			continue
-		current_board.board_array[i][j]=ai_piece
-		if current_board.check_win_from(i,j,ai_piece):
-			current_board.board_array[i][j]=0
-			wins.append((i,j))
-			continue
-		current_board.board_array[i][j]=0
-		current_board.board_array[i][j]=opponent_piece
-		if current_board.check_win_from(i,j,opponent_piece):
-			current_board.board_array[i][j]=0
-			blocks.append((i,j))
-			continue
-		current_board.board_array[i][j]=0
-		rests.append((i,j))
-	rests.sort(key=lambda m: neighbour_count(*m), reverse=True)
-	return wins+blocks+rests
+    return score
+
+def order_evaluation(current_board: board.Board, moves, piece, limit=None):
+    opp_piece = opponent(piece)
+    wins, blocks, scored = [], [], []
+
+    for row, col in moves:
+        if current_board.board_array[row, col] != 0:
+            continue
+
+        current_board.change_state(row, col, piece)
+        if current_board.check_win_from(row, col, piece):
+            current_board.change_state(row, col, 0)
+            wins.append((row, col))
+            continue
+        own_score = total_move_score(current_board, row, col, piece)
+        current_board.change_state(row, col, 0)
+
+        current_board.change_state(row, col, opp_piece)
+        block_score = total_move_score(current_board, row, col, opp_piece)
+        if current_board.check_win_from(row, col, opp_piece):
+            current_board.change_state(row, col, 0)
+            blocks.append((row, col))
+            continue
+        current_board.change_state(row, col, 0)
+
+        scored.append(((own_score + block_score), (row, col)))
+
+    scored.sort(key=lambda item: item[0], reverse=True)
+    ordered = wins + blocks + [move for _, move in scored]
+    if limit is not None:
+        ordered = ordered[:limit]
+    return ordered
 
 def parallel_evaluation(task):
     board_array, dimension, ai_piece, move, max_depth, max_memory, child_candidate_limit, radius = task
