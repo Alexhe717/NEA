@@ -9,7 +9,10 @@ class Board:
 		
 	def display(self):
 		print(self.board_array)
-
+		
+	def get_board_state(self):
+		return self.board_array.copy()
+	
 	def change_state(self,x,y,piece):
 		if not (0 <= x < self.dimension and 0 <= y < self.dimension):
 			raise IndexError(f"Move ({x}, {y}) is out of bounds for board size {self.dimension}")
