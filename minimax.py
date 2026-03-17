@@ -123,70 +123,75 @@ def best_move(current_board: board.Board, ai_piece, config: Config = None):
             best_row, best_col = row, col
     return int(best_row), int(best_col)
 
-def minimax(current_board: board.Board,depth,is_maximising,alpha:int,beta:int,ai_piece,max_depth,last_move):
-	opponent_piece=opponent(ai_piece)
-	if is_maximising:
-		side_to_move= ai_piece
-	else:
-		side_to_move=opponent_piece
-	if max_depth is None:
-		depth_left=None
-	else:
-		depth_left=max_depth-depth
-	key=tt.key(current_board.board_array,side_to_move)
-	tt_value=tt.probe(key,depth_left,alpha,beta)
-	if tt_value is not None:
-		return tt_value
-	if last_move is not None:
-		lx,ly,lp=last_move
-		if current_board.check_win_from(lx,ly,lp):
-			if lp==ai_piece:
-				return 100000-depth
-			else:
-				return -100000+depth
-	if (max_depth is not None) and (depth>=max_depth):
-		lx=None
-		ly=None
-		if last_move is not None:
-			lx,ly,_=last_move
-		return evaluation(current_board,ai_piece,lx,ly)
-	alpha0,beta0=alpha,beta
-	if is_maximising:
-		best_score=-math.inf
-		moves=order_evaluation(current_board, move_filter(current_board, 3), ai_piece)
-		if not moves:
-			return 0
-		for i,j in moves:
-			current_board.change_state(i,j,ai_piece)
-			score=minimax(current_board,depth+1,False,alpha,beta,ai_piece,max_depth,last_move=(i,j,ai_piece))
-			current_board.change_state(i,j,0)
-			if score > best_score:
-				best_score = score
-			if best_score > alpha:
-				alpha = best_score
-			if beta <= alpha:
-				tt.store(key, depth_left, alpha0, beta0, best_score)
-				return best_score
-		tt.store(key,depth_left,alpha0,beta0,best_score)
-		return best_score
-	else:
-		best_score=math.inf
-		moves=order_evaluation(current_board, move_filter(current_board, 3), opponent_piece)
-		if not moves:
-			return 0
-		for i,j in moves:
-			current_board.change_state(i,j,opponent_piece)
-			score=minimax(current_board,depth+1,True,alpha,beta,ai_piece,max_depth,last_move=(i,j,opponent_piece))
-			current_board.change_state(i,j,0)
-			if score < best_score:
-				best_score = score
-			if best_score < beta:
-				beta = best_score
-			if beta <= alpha:
-				tt.store(key,depth_left,alpha0,beta0,best_score)
-				return best_score
-		tt.store(key,depth_left,alpha0,beta0,best_score)
-		return best_score
+def minimax(
+    current_board: board.Board,
+    depth,
+    is_maximising,
+    alpha,
+    beta,
+    ai_piece,
+    max_depth,
+    last_move,
+    config: Config,
+):
+    side_to_move = ai_piece if is_maximising else opponent(ai_piece)
+    depth_left = max_depth - depth
+    hash_key = tt.key(current_board.board_array, side_to_move)
+    tt_value = tt.probe(hash_key, depth_left, alpha, beta)
+    if tt_value is not None:
+        return tt_value
+
+    if last_move is not None:
+        last_row, last_col, last_piece = last_move
+        if current_board.check_win_from(last_row, last_col, last_piece):
+            if last_piece == ai_piece:
+                return WIN_SCORE - depth
+            return -WIN_SCORE + depth
+
+    if depth >= max_depth or current_board.check_draw():
+        last_row, last_col = (last_move[0], last_move[1]) if last_move is not None else (None, None)
+        return evaluate_last_move(current_board, ai_piece, last_row, last_col)
+
+    orig_alpha, orig_beta = alpha, beta
+    moves = move_filter(current_board, config.candidate_radius)
+    limit = config.child_candidate_limit
+    
+    if is_maximising:
+        ordered = order_evaluation(current_board, moves, ai_piece, limit=limit)
+        if not ordered:
+            return 0
+        best_score = -math.inf
+        for row, col in ordered:
+            current_board.change_state(row, col, ai_piece)
+            score = minimax(current_board, depth + 1, False, alpha, beta, ai_piece, max_depth, (row, col, ai_piece), config)
+            current_board.change_state(row, col, 0)
+            if score > best_score:
+                best_score = score
+            if best_score > alpha:
+                alpha = best_score
+            if beta <= alpha:
+                break
+        tt.store(hash_key, depth_left, orig_alpha, orig_beta, int(best_score))
+        return int(best_score)
+
+    opp_piece = opponent(ai_piece)
+    ordered = order_evaluation(current_board, moves, opp_piece, limit=limit)
+    if not ordered:
+        return 0
+    best_score = math.inf
+    for row, col in ordered:
+        current_board.change_state(row, col, opp_piece)
+        score = minimax(current_board, depth + 1, True, alpha, beta, ai_piece, max_depth, (row, col, opp_piece), config)
+        current_board.change_state(row, col, 0)
+        if score < best_score:
+            best_score = score
+        if best_score < beta:
+            beta = best_score
+        if beta <= alpha:
+            break
+    tt.store(hash_key, depth_left, orig_alpha, orig_beta, int(best_score))
+    return int(best_score)
+
 	
 def opponent(piece):
 	if piece==1:
