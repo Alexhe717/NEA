@@ -62,19 +62,66 @@ def adaptive_search_depth(current_board:board.Board):
 	if stones <= 9:  return 7
 	return 6
 
-def best_move(current_board: board.Board,ai_piece):
-	search_depth=adaptive_search_depth(current_board)
-	best_score=-math.inf
-	best_i,best_j=None,None
-	for i,j in move_filter(current_board,2):
-		current_board.change_state(i,j,ai_piece)
-		score=minimax(current_board,0,False,-math.inf,math.inf,ai_piece,search_depth,last_move=(i,j,ai_piece))
-		if score>best_score:
-			best_score=score
-			best_i=i
-			best_j=j
-		current_board.change_state(i,j,0)
-	return best_i,best_j
+def best_move(current_board: board.Board, ai_piece, config: Config = None):
+    config = config or DEFAULT_CONFIG
+    tt.assign_memory(max_memory=config.max_memory)
+
+    search_depth = config.max_depth or adaptive_search_depth(current_board)
+    root_moves = order_evaluation(
+        current_board,
+        move_filter(current_board, radius=config.candidate_radius),
+        ai_piece,
+        limit=config.root_candidate_limit,
+    )
+    if not root_moves:
+        return None, None
+
+    if len(root_moves) == 1:
+        return int(root_moves[0][0]), int(root_moves[0][1])
+
+    max_cores = config.max_cores or max(1, min((os.cpu_count() or 1) - 2, len(root_moves)))
+    use_parallel = config.parallel and max_cores > 1 and len(root_moves) >= 2
+
+    if use_parallel:
+        per_core_memory = max(128, config.max_memory // max_cores)
+        tasks = [
+            (
+                current_board.get_board_state(),
+                current_board.dimension,
+                ai_piece,
+                move,
+                search_depth,
+                per_core_memory,
+                config.child_candidate_limit,
+                config.candidate_radius,
+            )
+            for move in root_moves
+        ]
+        with ProcessPoolExecutor(max_workers=max_cores) as pool:
+            results = list(pool.map(parallel_evaluation, tasks, chunksize=1))
+        best_score, best_row, best_col = max(results, key=lambda item: item[0])
+        return int(best_row), int(best_col)
+
+    best_score = -math.inf
+    best_row, best_col = root_moves[0]
+    for row, col in root_moves:
+        current_board.change_state(row, col, ai_piece)
+        score = minimax(
+            current_board,
+            0,
+            False,
+            -math.inf,
+            math.inf,
+            ai_piece,
+            search_depth,
+            (row, col, ai_piece),
+            config,
+        )
+        current_board.change_state(row, col, 0)
+        if score > best_score:
+            best_score = score
+            best_row, best_col = row, col
+    return int(best_row), int(best_col)
 
 def minimax(current_board: board.Board,depth,is_maximising,alpha:int,beta:int,ai_piece,max_depth,last_move):
 	opponent_piece=opponent(ai_piece)
@@ -223,6 +270,38 @@ def order_evaluation(current_board: board.Board,moves,ai_piece):
 	rests.sort(key=lambda m: neighbour_count(*m), reverse=True)
 	return wins+blocks+rests
 
+def parallel_evaluation(task):
+    board_array, dimension, ai_piece, move, max_depth, max_memory, child_candidate_limit, radius = task
+    tt.clear()
+    tt.assign_memory(max_memory=max_memory)
+
+    sim_board = board.Board(dimension)
+    sim_board.board_array[:, :] = board_array
+    sim_board.empty_count = int(np.count_nonzero(board_array == 0))
+
+    row, col = move
+    sim_board.change_state(row, col, ai_piece)
+
+    local_config = Config(
+        max_depth=max_depth,
+        candidate_radius=radius,
+        root_candidate_limit=0,
+        child_candidate_limit=child_candidate_limit,
+        parallel=False,
+        max_memory=max_memory,
+    )
+    score = minimax(
+        sim_board,
+        depth=0,
+        is_maximising=False,
+        alpha=-math.inf,
+        beta=math.inf,
+        ai_piece=ai_piece,
+        max_depth=max_depth,
+        last_move=(row, col, ai_piece),
+        config=local_config,
+    )
+    return score, row, col
 
 
 				
