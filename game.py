@@ -1,5 +1,4 @@
 import board
-import numpy as np
 import tt
 import minimax
 class Player:
@@ -8,7 +7,7 @@ class Player:
 		self.piece=piece
 	def policy(self,current_board:board.Board):
 		if self.name=='human':
-			pass
+			raise ValueError(f'The human input is handled by the ui')
 		if self.name=='ai':
 			return minimax.best_move(current_board, self.piece)
 		raise ValueError(f'Unknown player type: {self.name}')
@@ -24,16 +23,14 @@ class Game:
 		self.turn_number = 0
 		self.last_move = None
 		tt.clear()
+	@property
+	def current_player(self):
+		return self.players[self.turn_number % 2]
 
 	def make_move(self, x, y):
 		player = self.current_player
 		self.current_board.change_state(x, y, player.piece)
 		self.last_move = (x, y)
 		self.turn_number += 1
-		if self.current_board.check_win_from(x, y, player.piece):
-			return 'win'
-		if self.current_board.check_draw():
-			return 'draw'
-			
-		return None
+		return 'win' if self.current_board.check_win_from(x, y, player.piece) else 'draw' if self.current_board.check_draw() else 'continue'
 

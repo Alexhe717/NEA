@@ -1,7 +1,32 @@
-import board
 import math
+import os
+from concurrent.futures import ProcessPoolExecutor
+from typing import Optional
+from dataclasses import dataclass
 import numpy as np
+
+import board
 import tt
+DIRECTIONS = ((1, 0), (0, 1), (1, 1), (1, -1))
+WIN_SCORE = 1_000_000
+
+
+def tt_memory(max_memory=4096):
+    tt.assign_memory(max_memory=max_memory)
+
+
+@dataclass
+class Config:
+    max_depth: Optional[int] = None
+    candidate_radius: int = 2
+    root_candidate_limit: int = 18
+    child_candidate_limit: int = 10
+    max_cores: Optional[int] = None
+    max_memory: int = 4096
+    parallel: bool = True
+
+
+DEFAULT_CONFIG = Config()
 def move_filter(current_board: board.Board,radius):
 	occupied=np.argwhere(current_board.board_array!=0)
 	if occupied.size==0:
