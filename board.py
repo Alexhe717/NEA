@@ -1,11 +1,16 @@
 import numpy as np
+import tt
+
 class Board:
+
 	def __init__(self,dimension):
 		self.dimension=dimension
 		self.condition=5
 		self.board_array=np.zeros([dimension,dimension],dtype=np.int8)
 		self.last_move=None
 		self.empty_count = dimension * dimension
+		tt.init_zobrist(dimension)
+		self.current_hash=0
 		
 	def display(self):
 		print(self.board_array)
@@ -19,8 +24,13 @@ class Board:
 		if piece not in [0, 1, 2]:
 			raise ValueError(f"Invalid piece type: {piece}")
 		old = self.board_array[x][y]
-		if old == 0 and piece != 0: self.empty_count -= 1
-		if old != 0 and piece == 0: self.empty_count += 1
+		if old != 0: 
+			self.current_hash ^= tt.ZOBRIST_TABLE[(x, y, old)]
+			self.empty_count += 1
+		if piece != 0: 
+					self.current_hash ^= tt.ZOBRIST_TABLE[(x, y, piece)]
+					if old == 0:
+						self.empty_count -= 1
 		self.board_array[x][y] = piece
 
 	def check_draw(self):

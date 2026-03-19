@@ -1,6 +1,7 @@
 import board
 import tt
 import minimax
+
 class Player:
 	def __init__(self,name,piece):
 		self.name=name
@@ -11,6 +12,7 @@ class Player:
 		if self.name=='ai':
 			return minimax.best_move(current_board, self.piece)
 		raise ValueError(f'Unknown player type: {self.name}')
+	
 class Game:
 	def __init__(self,board_dimension,win_condition=5):
 		self.board_dimension = board_dimension
@@ -23,6 +25,7 @@ class Game:
 		self.turn_number = 0
 		self.last_move = None
 		tt.clear()
+	
 	@property
 	def current_player(self):
 		return self.players[self.turn_number % 2]

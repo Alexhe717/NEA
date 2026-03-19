@@ -1,10 +1,14 @@
 from collections import OrderedDict
-import hashlib
+import random
+
 EXACT, LOWER, UPPER = 0,1,2
 DEPTH, FLAG, SCORE = 0,1,2
 MAX_TT_SIZE = 100000
 _APPROX_ENTRY_BYTES = 96
+ZOBRIST_TABLE = {}
+ZOBRIST_TURN = random.getrandbits(64)
 TT = OrderedDict()
+
 def assign_memory(max_memory: int = 512):
     global MAX_TT_SIZE
     max_memory_bytes = max(16, int(max_memory)) * 1024 * 1024
@@ -12,16 +16,23 @@ def assign_memory(max_memory: int = 512):
     if len(TT) > MAX_TT_SIZE:
         trim()
 
-
 def trim():
     while len(TT) > MAX_TT_SIZE:
         TT.popitem(last=False)
 
-def key(board_arr, side_to_move: int):
-    h = hashlib.blake2b(digest_size=8)
-    h.update(board_arr.tobytes(order='C'))
-    h.update(bytes((int(side_to_move), board_arr.shape[0] & 0xFF, board_arr.shape[1] & 0xFF)))
-    return int.from_bytes(h.digest(), 'little', signed=False)
+def init_zobrist(dimension: int):
+    if ZOBRIST_TABLE: return 
+    
+    random.seed(42)
+    for r in range(dimension):
+        for c in range(dimension):
+            ZOBRIST_TABLE[(r, c, 1)] = random.getrandbits(64)
+            ZOBRIST_TABLE[(r, c, 2)] = random.getrandbits(64)
+
+def key(board_hash: int, side_to_move: int) -> int:
+    if side_to_move == 1:
+        return board_hash ^ ZOBRIST_TURN
+    return board_hash
 
 def probe(hash_key: int, depth: int, alpha: int, beta: int):
     value = TT.get(hash_key)

@@ -4,9 +4,9 @@ from concurrent.futures import ProcessPoolExecutor
 from typing import Optional
 from dataclasses import dataclass
 import numpy as np
-
 import board
 import tt
+
 DIRECTIONS = ((1, 0), (0, 1), (1, 1), (1, -1))
 WIN_SCORE = 1_000_000
 
@@ -147,7 +147,7 @@ def minimax(
 ):
     side_to_move = ai_piece if is_maximising else opponent(ai_piece)
     depth_left = max_depth - depth
-    hash_key = tt.key(current_board.board_array, side_to_move)
+    hash_key = tt.key(current_board.current_hash, side_to_move)
     tt_value = tt.probe(hash_key, depth_left, alpha, beta)
     if tt_value is not None:
         return tt_value
