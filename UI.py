@@ -20,8 +20,6 @@ class GomokuUI:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title("Gomoku AI")
-        
-
 
         self.dimension = BOARD_DIMENSION
         self.win_condition = WIN_CONDITION
@@ -30,20 +28,18 @@ class GomokuUI:
         self.game = None
         self.game_over = False
         self.status_var = tk.StringVar()
-        
-
         self.current_frame = None 
 
 
         self.show_main_menu()
 
     def clear_screen(self):
-        """Destroys the current frame and unlocks window resizing to make room for the next screen."""
         if self.current_frame is not None:
             self.current_frame.destroy()
         
 
         self.root.resizable(True, True)
+
 
     def show_main_menu(self):
         self.clear_screen()
@@ -54,7 +50,7 @@ class GomokuUI:
         title = tk.Label(self.current_frame, text="Gomoku AI", font=("Arial", 24, "bold"))
         title.pack(pady=(0, 30))
 
- 
+
         start_btn = tk.Button(self.current_frame, text="Start New Game", font=("Arial", 14), width=15, command=self.start_new_game)
         start_btn.pack(pady=10)
 
@@ -83,7 +79,7 @@ class GomokuUI:
         top_frame = tk.Frame(self.current_frame)
         top_frame.pack(fill=tk.X, pady=(0, 10))
 
-
+ 
         status_label = tk.Label(top_frame, textvariable=self.status_var, font=("Arial", 14))
         status_label.pack(side=tk.LEFT)
 
@@ -94,7 +90,7 @@ class GomokuUI:
         restart_btn = tk.Button(top_frame, text="Restart", command=self.start_new_game)
         restart_btn.pack(side=tk.RIGHT)
 
-
+        # SC3: The board interface
         self.canvas = tk.Canvas(
             self.current_frame, 
             width=self.canvas_size, 
@@ -104,6 +100,7 @@ class GomokuUI:
         )
         self.canvas.pack()
         self.canvas.bind("<Button-1>", self.on_canvas_click)
+
 
         self.root.update_idletasks()
         self.root.resizable(False, False)
@@ -185,16 +182,14 @@ class GomokuUI:
 
         self.status_var.set("Your turn") # SC4
 
-    # ==========================================
-    # GAME END & SAVING (SC5, SC6, SC7, SC8)
-    # ==========================================
+
     def _check_end_of_game(self, status: str, win_text: str):
         if status == 'win' or status == 'draw':
             self.game_over = True
             display_text = win_text if status == 'win' else "The game is a draw!"
-            self.status_var.set(display_text) # SC7: Display winner
+            self.status_var.set(display_text) 
             
-            # SC8: Offer to restart or exit
+
             response = messagebox.askquestion("Game Over", f"{display_text}\n\nWould you like to play again?", icon='question')
             if response == 'yes':
                 self.start_new_game()
@@ -204,24 +199,16 @@ class GomokuUI:
         return False
 
     def return_to_menu(self):
-        """SC5 & SC6: Handle returning to menu and prompting for save."""
+        """SC5: Handle returning to menu."""
         if not self.game_over:
-            # SC6: Prompt to save if the game is still active
-            save_response = messagebox.askyesnocancel("Save Game?", "Do you want to save your progress before returning to the menu?")
-            
-            if save_response is None:
-                # User clicked Cancel, stay in the game
-                return
-            elif save_response is True:
-                # User clicked Yes, save the game
-                self.save_game()
-                
-        # SC5: Return to menu
-        self.show_main_menu()
 
-    def save_game(self):
-        """Placeholder for saving logic."""
-        messagebox.showinfo("Saved", "Game state saved successfully! (Mock)")
+            quit_response = messagebox.askyesno("Quit Game?", "Are you sure you want to return to the menu? Your current game will be lost.")
+            
+            if not quit_response:
+
+                return 
+                
+        self.show_main_menu()
 
 
 if __name__ == "__main__":
