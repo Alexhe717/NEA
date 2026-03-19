@@ -20,7 +20,8 @@ class GomokuUI:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title("Gomoku AI")
-        self.root.resizable(False, False)
+        
+
 
         self.dimension = BOARD_DIMENSION
         self.win_condition = WIN_CONDITION
@@ -28,124 +29,140 @@ class GomokuUI:
 
         self.game = None
         self.game_over = False
-
         self.status_var = tk.StringVar()
-        self.status_var.set("Your turn")
+        
 
-        self._build_widgets()
-        self.start_new_game()
+        self.current_frame = None 
 
-    def _build_widgets(self):
-        main_frame = tk.Frame(self.root, padx=10, pady=10)
-        main_frame.pack()
 
-        top_frame = tk.Frame(main_frame)
-        top_frame.pack(fill="x", pady=(0, 8))
+        self.show_main_menu()
 
-        tk.Label(
-            top_frame,
-            text=f"Board size: {self.dimension} x {self.dimension} | Win condition: {self.win_condition}",
-            font=("Arial", 12, "bold")
-        ).pack(side="left")
+    def clear_screen(self):
+        """Destroys the current frame and unlocks window resizing to make room for the next screen."""
+        if self.current_frame is not None:
+            self.current_frame.destroy()
+        
 
-        tk.Button(
-            top_frame,
-            text="New Game",
-            command=self.start_new_game,
-            font=("Arial", 10)
-        ).pack(side="right")
+        self.root.resizable(True, True)
+
+    def show_main_menu(self):
+        self.clear_screen()
+        
+        self.current_frame = tk.Frame(self.root, padx=50, pady=50)
+        self.current_frame.pack(expand=True, fill="both")
+
+        title = tk.Label(self.current_frame, text="Gomoku AI", font=("Arial", 24, "bold"))
+        title.pack(pady=(0, 30))
+
+ 
+        start_btn = tk.Button(self.current_frame, text="Start New Game", font=("Arial", 14), width=15, command=self.start_new_game)
+        start_btn.pack(pady=10)
+
+
+        exit_btn = tk.Button(self.current_frame, text="Exit", font=("Arial", 14), width=15, command=self.root.destroy)
+        exit_btn.pack(pady=10)
+
+
+        self.root.update_idletasks()
+        self.root.resizable(False, False)
+
+
+    def start_new_game(self):
+        self.clear_screen()
+        self.game = game.Game(self.dimension, self.win_condition)
+        self.game_over = False
+        self.status_var.set("Your turn") 
+        
+        self._build_game_widgets()
+        self.draw_board()
+
+    def _build_game_widgets(self):
+        self.current_frame = tk.Frame(self.root, padx=10, pady=10)
+        self.current_frame.pack()
+
+        top_frame = tk.Frame(self.current_frame)
+        top_frame.pack(fill=tk.X, pady=(0, 10))
+
+
+        status_label = tk.Label(top_frame, textvariable=self.status_var, font=("Arial", 14))
+        status_label.pack(side=tk.LEFT)
+
+
+        menu_btn = tk.Button(top_frame, text="Main Menu", command=self.return_to_menu)
+        menu_btn.pack(side=tk.RIGHT, padx=(10, 0))
+
+        restart_btn = tk.Button(top_frame, text="Restart", command=self.start_new_game)
+        restart_btn.pack(side=tk.RIGHT)
+
 
         self.canvas = tk.Canvas(
-            main_frame,
-            width=self.canvas_size,
-            height=self.canvas_size,
-            bg=BOARD_COLOUR,
-            highlightthickness=1,
-            highlightbackground="#888888"
+            self.current_frame, 
+            width=self.canvas_size, 
+            height=self.canvas_size, 
+            bg=BOARD_COLOUR, 
+            highlightthickness=0
         )
         self.canvas.pack()
         self.canvas.bind("<Button-1>", self.on_canvas_click)
 
-        bottom_frame = tk.Frame(main_frame)
-        bottom_frame.pack(fill="x", pady=(8, 0))
-
-        tk.Label(
-            bottom_frame,
-            textvariable=self.status_var,
-            anchor="w",
-            font=("Arial", 11)
-        ).pack(side="left")
-
-    def start_new_game(self):
-        self.game = game.Game(self.dimension, self.win_condition)
-        self.game_over = False
-        self.status_var.set("Your turn")
-        self.draw_board()
+        self.root.update_idletasks()
+        self.root.resizable(False, False)
 
     def draw_board(self):
         self.canvas.delete("all")
+        
 
         for i in range(self.dimension):
-            pos = MARGIN + i * CELL_SIZE
-            self.canvas.create_line(MARGIN, pos, self.canvas_size - MARGIN, pos, width=GRID_LINE_WIDTH, fill=GRID_COLOUR)
-            self.canvas.create_line(pos, MARGIN, pos, self.canvas_size - MARGIN, width=GRID_LINE_WIDTH, fill=GRID_COLOUR)
+            x = MARGIN + i * CELL_SIZE
+            self.canvas.create_line(x, MARGIN, x, self.canvas_size - MARGIN, width=GRID_LINE_WIDTH, fill=GRID_COLOUR)
+            y = MARGIN + i * CELL_SIZE
+            self.canvas.create_line(MARGIN, y, self.canvas_size - MARGIN, y, width=GRID_LINE_WIDTH, fill=GRID_COLOUR)
 
-        for x in range(self.dimension):
-            for y in range(self.dimension):
-                piece = self.game.current_board.board_array[x][y]
+
+        board_state = self.game.current_board.get_board_state()
+        for r in range(self.dimension):
+            for c in range(self.dimension):
+                piece = board_state[r][c]
                 if piece != 0:
-                    self._draw_stone(x, y, piece)
+                    self._draw_stone(r, c, HUMAN_COLOUR if piece == 1 else AI_COLOUR)
 
-        if self.game.last_move is not None:
-            x, y = self.game.last_move
-            cx, cy = self._grid_to_canvas(x, y)
-            size = 5
-            self.canvas.create_line(cx - size, cy, cx + size, cy, fill=LAST_MOVE_MARK_COLOUR, width=2)
-            self.canvas.create_line(cx, cy - size, cx, cy + size, fill=LAST_MOVE_MARK_COLOUR, width=2)
 
-    def _draw_stone(self, x: int, y: int, piece: int):
-        cx, cy = self._grid_to_canvas(x, y)
-        colour = HUMAN_COLOUR if piece == self.game.player_1.piece else AI_COLOUR
+        if self.game.last_move:
+            r, c = self.game.last_move
+            self._draw_last_move_marker(r, c)
 
-        self.canvas.create_oval(
-            cx - CELL_SIZE // 2 + STONE_PADDING,
-            cy - CELL_SIZE // 2 + STONE_PADDING,
-            cx + CELL_SIZE // 2 - STONE_PADDING,
-            cy + CELL_SIZE // 2 - STONE_PADDING,
-            fill=colour,
-            outline="#222222"
-        )
+    def _draw_stone(self, row, col, colour):
+        x = MARGIN + col * CELL_SIZE
+        y = MARGIN + row * CELL_SIZE
+        r = (CELL_SIZE // 2) - STONE_PADDING
+        self.canvas.create_oval(x - r, y - r, x + r, y + r, fill=colour, outline="black")
 
-    def _grid_to_canvas(self, x: int, y: int):
-        return MARGIN + y * CELL_SIZE, MARGIN + x * CELL_SIZE
-
-    def _canvas_to_grid(self, px: int, py: int):
-        row = round((py - MARGIN) / CELL_SIZE)
-        col = round((px - MARGIN) / CELL_SIZE)
-        if 0 <= row < self.dimension and 0 <= col < self.dimension:
-            return row, col
-        return None, None
+    def _draw_last_move_marker(self, row, col):
+        x = MARGIN + col * CELL_SIZE
+        y = MARGIN + row * CELL_SIZE
+        mr = 3 
+        self.canvas.create_oval(x - mr, y - mr, x + mr, y + mr, fill=LAST_MOVE_MARK_COLOUR, outline=LAST_MOVE_MARK_COLOUR)
 
     def on_canvas_click(self, event):
-        # Ignore clicks if game over, or if the current player is not a human
         if self.game_over or self.game.current_player.name != 'human':
             return
 
-        x, y = self._canvas_to_grid(event.x, event.y)
-        if x is None or y is None:
-            return
-        if self.game.current_board.board_array[x][y] != 0:
+        col = round((event.x - MARGIN) / CELL_SIZE)
+        row = round((event.y - MARGIN) / CELL_SIZE)
+
+        if not (0 <= row < self.dimension and 0 <= col < self.dimension):
             return
 
-        # Execute human turn
-        status = self.game.make_move(x, y)
+        if self.game.current_board.get_board_state()[row][col] != 0:
+            return
+
+        status = self.game.make_move(row, col)
         self.draw_board()
 
         if self._check_end_of_game(status, "You win!"):
             return
 
-        # Advance to AI turn safely so the UI thread doesn't lock
-        self.status_var.set("AI is thinking...")
+        self.status_var.set("AI is thinking...") # SC4
         self.root.update_idletasks()
         self.root.after(50, self.play_ai_turn)
 
@@ -154,39 +171,57 @@ class GomokuUI:
             return
 
         ai_player = self.game.current_player
-        
-        # Game class exposes the current player and board, let the AI calculate its move
         x, y = ai_player.policy(self.game.current_board)
 
         if x is None or y is None:
-            self.game_over = True
-            self.status_var.set("No valid AI move. Draw.")
-            messagebox.showinfo("Game Over", "Draw")
+            self._check_end_of_game('draw', "Draw")
             return
 
-        # Execute AI turn
         status = self.game.make_move(x, y)
         self.draw_board()
 
         if self._check_end_of_game(status, "AI wins!"):
             return
 
-        self.status_var.set("Your turn")
+        self.status_var.set("Your turn") # SC4
 
+    # ==========================================
+    # GAME END & SAVING (SC5, SC6, SC7, SC8)
+    # ==========================================
     def _check_end_of_game(self, status: str, win_text: str):
-        if status == 'win':
+        if status == 'win' or status == 'draw':
             self.game_over = True
-            self.status_var.set(win_text)
-            messagebox.showinfo("Game Over", win_text)
+            display_text = win_text if status == 'win' else "The game is a draw!"
+            self.status_var.set(display_text) # SC7: Display winner
+            
+            # SC8: Offer to restart or exit
+            response = messagebox.askquestion("Game Over", f"{display_text}\n\nWould you like to play again?", icon='question')
+            if response == 'yes':
+                self.start_new_game()
+            else:
+                self.show_main_menu()
             return True
-
-        if status == 'draw':
-            self.game_over = True
-            self.status_var.set("Draw")
-            messagebox.showinfo("Game Over", "Draw")
-            return True
-
         return False
+
+    def return_to_menu(self):
+        """SC5 & SC6: Handle returning to menu and prompting for save."""
+        if not self.game_over:
+            # SC6: Prompt to save if the game is still active
+            save_response = messagebox.askyesnocancel("Save Game?", "Do you want to save your progress before returning to the menu?")
+            
+            if save_response is None:
+                # User clicked Cancel, stay in the game
+                return
+            elif save_response is True:
+                # User clicked Yes, save the game
+                self.save_game()
+                
+        # SC5: Return to menu
+        self.show_main_menu()
+
+    def save_game(self):
+        """Placeholder for saving logic."""
+        messagebox.showinfo("Saved", "Game state saved successfully! (Mock)")
 
 
 if __name__ == "__main__":
