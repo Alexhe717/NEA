@@ -1,7 +1,8 @@
 import board
 import tt
 import minimax
-
+import json
+import numpy as np
 class Player:
 	def __init__(self,name,piece):
 		self.name=name
@@ -37,3 +38,34 @@ class Game:
 		self.turn_number += 1
 		return 'win' if self.current_board.check_win_from(x, y, player.piece) else 'draw' if self.current_board.check_draw() else 'continue'
 
+
+	def save_game(self, filename="savegame.json"):
+		state = {
+			"board_dimension": self.board_dimension,
+			"win_condition": self.current_board.condition,
+			"turn_number": self.turn_number,
+			"last_move": self.last_move,
+			"board_array": self.current_board.board_array.tolist()
+		}
+		with open(filename, 'w') as f:
+			json.dump(state, f)
+
+	def load_game(self, filename="savegame.json"):
+		with open(filename, 'r') as f:
+			state = json.load(f)
+			
+		self.board_dimension = state["board_dimension"]
+		self.current_board.condition = state["win_condition"]
+		self.turn_number = state["turn_number"]
+		self.last_move = tuple(state["last_move"]) if state["last_move"] else None
+		
+		self.current_board.board_array = np.array(state["board_array"], dtype=np.int8)
+		self.current_board.empty_count = int(np.count_nonzero(self.current_board.board_array == 0))
+		
+		self.current_board.current_hash = 0
+		for r in range(self.board_dimension):
+			for c in range(self.board_dimension):
+				piece = self.current_board.board_array[r][c]
+				if piece != 0:
+					self.current_board.current_hash ^= tt.ZOBRIST_TABLE[(r, c, piece)]
+		tt.clear()
