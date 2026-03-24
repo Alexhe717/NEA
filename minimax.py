@@ -7,8 +7,8 @@ import numpy as np
 import board
 import tt
 
-DIRECTIONS = ((1, 0), (0, 1), (1, 1), (1, -1))
-WIN_SCORE = 1_000_000
+DIRECTIONS = ((1, 0), (0, 1), (1, 1), (1, -1)) #direction constants
+WIN_SCORE = 1_000_000 #win score constant
 
 
 def tt_memory(max_memory: int = 4096) -> None:
@@ -16,7 +16,7 @@ def tt_memory(max_memory: int = 4096) -> None:
 
 
 @dataclass
-class Config:
+class Config: #Hardware configurations
     max_depth: Optional[int] = None
     candidate_radius: int = 2
     root_candidate_limit: int = 18
@@ -28,20 +28,20 @@ class Config:
 
 DEFAULT_CONFIG = Config()
 
-def move_filter(current_board: board.Board, radius: int = 2) -> List[Tuple[int, int]]:
+def move_filter(current_board: board.Board, radius: int = 2) -> List[Tuple[int, int]]: #filter unecessary moves
     occupied = np.argwhere(current_board.board_array != 0)
     if occupied.size == 0:
         centre = current_board.dimension // 2
         return [(centre, centre)]
 
-    moves = set()
+    moves = set() #initialise a set of moves(set used for no duplication)
     board_size = current_board.dimension
     for row, col in occupied:
         for d_row in range(-radius, radius + 1):
             for d_col in range(-radius, radius + 1):
                 r, c = row + d_row, col + d_col
                 if 0 <= r < board_size and 0 <= c < board_size and current_board.board_array[r][c] == 0:
-                    moves.add((int(r), int(c)))
+                    moves.add((int(r), int(c))) #add all the legal moves into the set
 
     pruned = []
     for row, col in moves:
@@ -51,17 +51,17 @@ def move_filter(current_board: board.Board, radius: int = 2) -> List[Tuple[int, 
                 if d_row == 0 and d_col == 0:
                     continue
                 adj_row, adj_col = row + d_row, col + d_col
-                if 0 <= adj_row < board_size and 0 <= adj_col < board_size and current_board.board_array[adj_row][adj_col] != 0:
+                if 0 <= adj_row < board_size and 0 <= adj_col < board_size and current_board.board_array[adj_row][adj_col] != 0: #detecting if there are neighbouring pieces
                     has_neighbour = True
                     break
             if has_neighbour:
                 break
         if has_neighbour:
-            pruned.append((row, col))
+            pruned.append((row, col)) #add pieces which have neighbours into the finalised list
     return pruned if pruned else list(moves)
 
 def adaptive_search_depth(current_board: board.Board) -> int:
-    stones = np.count_nonzero(current_board.board_array)
+    stones = np.count_nonzero(current_board.board_array) #calculate the number of pieces been played already
     board_size = current_board.dimension
     if board_size <= 5:
         return 7
@@ -77,7 +77,7 @@ def best_move(current_board: board.Board, ai_piece: int, config: Optional[Config
     config = config or DEFAULT_CONFIG
     tt.assign_memory(max_memory=config.max_memory)
 
-    search_depth = config.max_depth or adaptive_search_depth(current_board)
+    search_depth = config.max_depth or adaptive_search_depth(current_board) #assign search depth
     root_moves = order_evaluation(
         current_board,
         move_filter(current_board, radius=config.candidate_radius),
@@ -108,12 +108,12 @@ def best_move(current_board: board.Board, ai_piece: int, config: Optional[Config
             )
             for move in root_moves
         ]
-        with ProcessPoolExecutor(max_workers=max_cores) as pool:
-            results = list(pool.map(parallel_evaluation, tasks, chunksize=1))
+        with ProcessPoolExecutor(max_workers=max_cores) as pool: #Add moves to evluate into a process pool
+            results = list(pool.map(parallel_evaluation, tasks, chunksize=1)) #map the pool to the parralell_evaluation() function
         best_score, best_row, best_col = max(results, key=lambda item: item[0])
         return int(best_row), int(best_col)
 
-    best_score = -math.inf
+    best_score = -math.inf   #if paralell processing is disabled use the standard minimax
     best_row, best_col = root_moves[0]
     for row, col in root_moves:
         current_board.change_state(row, col, ai_piece)
@@ -147,27 +147,27 @@ def minimax(
 ) -> int:
     side_to_move = ai_piece if is_maximising else opponent(ai_piece)
     depth_left = max_depth - depth
-    hash_key = tt.key(current_board.current_hash, side_to_move)
-    tt_value = tt.probe(hash_key, depth_left, alpha, beta)
+    hash_key = tt.key(current_board.current_hash, side_to_move) #calculate a hash value
+    tt_value = tt.probe(hash_key, depth_left, alpha, beta) #check if the hash is in the table
     if tt_value is not None:
-        return tt_value
+        return tt_value #if hash value exsist then return the hash value
 
-    if last_move is not None:
+    if last_move is not None: #termination state
         last_row, last_col, last_piece = last_move
         if current_board.check_win_from(last_row, last_col, last_piece):
             if last_piece == ai_piece:
                 return WIN_SCORE - depth
             return -WIN_SCORE + depth
 
-    if depth >= max_depth or current_board.check_draw():
+    if depth >= max_depth or current_board.check_draw(): #if maximum search depth is met use the evluation heuristic
         last_row, last_col = (last_move[0], last_move[1]) if last_move is not None else (None, None)
         return evaluate_last_move(current_board, ai_piece, last_row, last_col)
 
-    orig_alpha, orig_beta = alpha, beta
+    orig_alpha, orig_beta = alpha, beta #make a copy of alpha and beta values
     moves = move_filter(current_board, config.candidate_radius)
     limit = config.child_candidate_limit
     
-    if is_maximising:
+    if is_maximising: #when maximiser is making a move
         ordered = order_evaluation(current_board, moves, ai_piece, limit=limit)
         if not ordered:
             return 0
@@ -181,11 +181,11 @@ def minimax(
             if best_score > alpha:
                 alpha = best_score
             if beta <= alpha:
-                break
-        tt.store(hash_key, depth_left, orig_alpha, orig_beta, int(best_score))
+                break #cut off
+        tt.store(hash_key, depth_left, orig_alpha, orig_beta, int(best_score)) #store the hashing in tt 
         return int(best_score)
 
-    opp_piece = opponent(ai_piece)
+    opp_piece = opponent(ai_piece) #when minimiser is making a move
     ordered = order_evaluation(current_board, moves, opp_piece, limit=limit)
     if not ordered:
         return 0
@@ -199,8 +199,8 @@ def minimax(
         if best_score < beta:
             beta = best_score
         if beta <= alpha:
-            break
-    tt.store(hash_key, depth_left, orig_alpha, orig_beta, int(best_score))
+            break #cut off
+    tt.store(hash_key, depth_left, orig_alpha, orig_beta, int(best_score)) #store the hashing in tt 
     return int(best_score)
 
 	
@@ -233,7 +233,7 @@ def line_info(grid: np.ndarray, row: int, col: int, piece: int, d_row: int, d_co
 
     return streak, open_ends
 
-def pattern_score(streak: int, open_ends: int, win_condition: int) -> int:
+def pattern_score(streak: int, open_ends: int, win_condition: int) -> int: #heuristic evaluation
     if streak >= win_condition:
         return WIN_SCORE
     if streak == win_condition - 1:
@@ -284,6 +284,7 @@ def evaluate_last_move(current_board: board.Board, ai_piece: int, row: Optional[
         opp_streak, opp_open = line_info(grid, row, col, opp_piece, d_row, d_col) if piece == opp_piece else (0, 0)
         score += pattern_score(ai_streak, ai_open, current_board.condition)
         score -= pattern_score(opp_streak, opp_open, current_board.condition)
+        #calculate sum of own score-opponent score
 
     return score
 
@@ -298,7 +299,7 @@ def order_evaluation(current_board: board.Board, moves: List[Tuple[int, int]], p
         current_board.change_state(row, col, piece)
         if current_board.check_win_from(row, col, piece):
             current_board.change_state(row, col, 0)
-            wins.append((row, col))
+            wins.append((row, col)) #append to win list
             continue
         own_score = total_move_score(current_board, row, col, piece)
         current_board.change_state(row, col, 0)
@@ -307,13 +308,13 @@ def order_evaluation(current_board: board.Board, moves: List[Tuple[int, int]], p
         block_score = total_move_score(current_board, row, col, opp_piece)
         if current_board.check_win_from(row, col, opp_piece):
             current_board.change_state(row, col, 0)
-            blocks.append((row, col))
+            blocks.append((row, col)) #append to block list
             continue
         current_board.change_state(row, col, 0)
 
         scored.append(((own_score + block_score), (row, col)))
 
-    scored.sort(key=lambda item: item[0], reverse=True)
+    scored.sort(key=lambda item: item[0], reverse=True) #sort be score
     ordered = wins + blocks + [move for _, move in scored]
     if limit is not None:
         ordered = ordered[:limit]
