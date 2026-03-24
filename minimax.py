@@ -1,7 +1,7 @@
 import math
 import os
 from concurrent.futures import ProcessPoolExecutor
-from typing import Optional
+from typing import Optional, Tuple, List
 from dataclasses import dataclass
 import numpy as np
 import board
@@ -11,7 +11,7 @@ DIRECTIONS = ((1, 0), (0, 1), (1, 1), (1, -1))
 WIN_SCORE = 1_000_000
 
 
-def tt_memory(max_memory=4096):
+def tt_memory(max_memory: int = 4096) -> None:
     tt.assign_memory(max_memory=max_memory)
 
 
@@ -28,7 +28,7 @@ class Config:
 
 DEFAULT_CONFIG = Config()
 
-def move_filter(current_board: board.Board, radius=2):
+def move_filter(current_board: board.Board, radius: int = 2) -> List[Tuple[int, int]]:
     occupied = np.argwhere(current_board.board_array != 0)
     if occupied.size == 0:
         centre = current_board.dimension // 2
@@ -60,7 +60,7 @@ def move_filter(current_board: board.Board, radius=2):
             pruned.append((row, col))
     return pruned if pruned else list(moves)
 
-def adaptive_search_depth(current_board: board.Board):
+def adaptive_search_depth(current_board: board.Board) -> int:
     stones = np.count_nonzero(current_board.board_array)
     board_size = current_board.dimension
     if board_size <= 5:
@@ -73,7 +73,7 @@ def adaptive_search_depth(current_board: board.Board):
         return 6
     return 5
 
-def best_move(current_board: board.Board, ai_piece, config: Config = None):
+def best_move(current_board: board.Board, ai_piece: int, config: Optional[Config] = None) -> Tuple[Optional[int], Optional[int]]:
     config = config or DEFAULT_CONFIG
     tt.assign_memory(max_memory=config.max_memory)
 
@@ -136,15 +136,15 @@ def best_move(current_board: board.Board, ai_piece, config: Config = None):
 
 def minimax(
     current_board: board.Board,
-    depth,
-    is_maximising,
-    alpha,
-    beta,
-    ai_piece,
-    max_depth,
-    last_move,
+    depth: int,
+    is_maximising: bool,
+    alpha: float,
+    beta: float,
+    ai_piece: int,
+    max_depth: int,
+    last_move: Optional[Tuple[int, int, int]],
     config: Config,
-):
+) -> int:
     side_to_move = ai_piece if is_maximising else opponent(ai_piece)
     depth_left = max_depth - depth
     hash_key = tt.key(current_board.current_hash, side_to_move)
@@ -204,13 +204,13 @@ def minimax(
     return int(best_score)
 
 	
-def opponent(piece):
-	if piece==1:
+def opponent(piece: int) -> int:
+	if piece == 1:
 		return 2
-	if piece==2:
+	if piece == 2:
 		return 1
 	
-def line_info(grid, row, col, piece, d_row, d_col):
+def line_info(grid: np.ndarray, row: int, col: int, piece: int, d_row: int, d_col: int) -> Tuple[int, int]:
     board_size = grid.shape[0]
     streak = 1
     open_ends = 0
@@ -233,7 +233,7 @@ def line_info(grid, row, col, piece, d_row, d_col):
 
     return streak, open_ends
 
-def pattern_score(streak, open_ends, win_condition):
+def pattern_score(streak: int, open_ends: int, win_condition: int) -> int:
     if streak >= win_condition:
         return WIN_SCORE
     if streak == win_condition - 1:
@@ -255,7 +255,7 @@ def pattern_score(streak, open_ends, win_condition):
         return 8
     return 0
 
-def total_move_score(current_board: board.Board, row, col, piece):
+def total_move_score(current_board: board.Board, row: int, col: int, piece: int) -> int:
     grid = current_board.board_array
     win_condition = current_board.condition
     total = 0
@@ -267,7 +267,7 @@ def total_move_score(current_board: board.Board, row, col, piece):
         total += pattern_score(streak, open_ends, win_condition)
     return total
 
-def evaluate_last_move(current_board: board.Board, ai_piece, row, col):
+def evaluate_last_move(current_board: board.Board, ai_piece: int, row: Optional[int], col: Optional[int]) -> int:
     if row is None or col is None:
         return 0
 
@@ -287,7 +287,7 @@ def evaluate_last_move(current_board: board.Board, ai_piece, row, col):
 
     return score
 
-def order_evaluation(current_board: board.Board, moves, piece, limit=None):
+def order_evaluation(current_board: board.Board, moves: List[Tuple[int, int]], piece: int, limit: Optional[int] = None) -> List[Tuple[int, int]]:
     opp_piece = opponent(piece)
     wins, blocks, scored = [], [], []
 
@@ -319,7 +319,7 @@ def order_evaluation(current_board: board.Board, moves, piece, limit=None):
         ordered = ordered[:limit]
     return ordered
 
-def parallel_evaluation(task):
+def parallel_evaluation(task: tuple) -> Tuple[int, int, int]:
     board_array, dimension, ai_piece, move, max_depth, max_memory, child_candidate_limit, radius = task
     tt.clear()
     tt.assign_memory(max_memory=max_memory)
@@ -351,6 +351,3 @@ def parallel_evaluation(task):
         config=local_config,
     )
     return score, row, col
-
-
-				

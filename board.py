@@ -1,24 +1,24 @@
 import numpy as np
 import tt
+from typing import Optional
 
 class Board:
-
-	def __init__(self,dimension):
-		self.dimension=dimension
-		self.condition=5
-		self.board_array=np.zeros([dimension,dimension],dtype=np.int8)
-		self.last_move=None
+	def __init__(self, dimension: int) -> None:
+		self.dimension = dimension
+		self.condition = 5
+		self.board_array = np.zeros([dimension, dimension], dtype=np.int8)
+		self.last_move = None
 		self.empty_count = dimension * dimension
 		tt.init_zobrist(dimension)
-		self.current_hash=0
+		self.current_hash = 0
 		
-	def display(self):
+	def display(self) -> None:
 		print(self.board_array)
 		
-	def get_board_state(self):
+	def get_board_state(self) -> np.ndarray:
 		return self.board_array.copy()
 	
-	def change_state(self,x,y,piece):
+	def change_state(self, x: int, y: int, piece: int) -> None:
 		if not (0 <= x < self.dimension and 0 <= y < self.dimension):
 			raise IndexError(f"Move ({x}, {y}) is out of bounds for board size {self.dimension}")
 		if piece not in [0, 1, 2]:
@@ -33,15 +33,15 @@ class Board:
 						self.empty_count -= 1
 		self.board_array[x][y] = piece
 
-	def check_draw(self):
+	def check_draw(self) -> bool:
 		return self.empty_count == 0
 	
-	def check_win_from(self, x, y, piece):
+	def check_win_from(self, x: Optional[int], y: Optional[int], piece: int) -> bool:
 		if x is None or y is None: 
 			return False
 		n = self.dimension
 
-		def count_direction(dx, dy):
+		def count_direction(dx: int, dy: int) -> int:
 			cnt = 1
 			i, j = x + dx, y + dy
 			while 0 <= i < n and 0 <= j < n and self.board_array[i][j] == piece:
@@ -64,4 +64,3 @@ class Board:
 		if count_direction(1, -1) >= self.condition:
 			return True
 		return False
-

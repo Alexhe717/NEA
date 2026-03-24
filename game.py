@@ -3,19 +3,20 @@ import tt
 import minimax
 import json
 import numpy as np
+from typing import Tuple, Optional
 class Player:
-	def __init__(self,name,piece):
-		self.name=name
-		self.piece=piece
-	def policy(self,current_board:board.Board):
-		if self.name=='human':
+	def __init__(self, name: str, piece: int) -> None:
+		self.name = name
+		self.piece = piece
+	def policy(self, current_board: board.Board) -> Tuple[Optional[int], Optional[int]]:
+		if self.name == 'human':
 			raise ValueError(f'The human input is handled by the ui')
-		if self.name=='ai':
+		if self.name == 'ai':
 			return minimax.best_move(current_board, self.piece)
 		raise ValueError(f'Unknown player type: {self.name}')
 	
 class Game:
-	def __init__(self,board_dimension,win_condition=5):
+	def __init__(self, board_dimension: int, win_condition: int = 5) -> None:
 		self.board_dimension = board_dimension
 		self.current_board = board.Board(board_dimension)
 		self.current_board.condition = win_condition
@@ -28,10 +29,10 @@ class Game:
 		tt.clear()
 	
 	@property
-	def current_player(self):
+	def current_player(self) -> Player:
 		return self.players[self.turn_number % 2]
 
-	def make_move(self, x, y):
+	def make_move(self, x: int, y: int) -> str:
 		player = self.current_player
 		self.current_board.change_state(x, y, player.piece)
 		self.last_move = (x, y)
@@ -39,7 +40,7 @@ class Game:
 		return 'win' if self.current_board.check_win_from(x, y, player.piece) else 'draw' if self.current_board.check_draw() else 'continue'
 
 
-	def save_game(self, filename="savegame.json"):
+	def save_game(self, filename: str = "savegame.json") -> None:
 		state = {
 			"board_dimension": self.board_dimension,
 			"win_condition": self.current_board.condition,
@@ -50,7 +51,7 @@ class Game:
 		with open(filename, 'w') as f:
 			json.dump(state, f)
 
-	def load_game(self, filename="savegame.json"):
+	def load_game(self, filename: str = "savegame.json") -> None:
 		with open(filename, 'r') as f:
 			state = json.load(f)
 			

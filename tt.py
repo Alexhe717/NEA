@@ -1,26 +1,27 @@
 from collections import OrderedDict
 import random
+from typing import Optional
 
-EXACT, LOWER, UPPER = 0,1,2
-DEPTH, FLAG, SCORE = 0,1,2
+EXACT, LOWER, UPPER = 0, 1, 2
+DEPTH, FLAG, SCORE = 0, 1, 2
 MAX_TT_SIZE = 100000
 _APPROX_ENTRY_BYTES = 96
 ZOBRIST_TABLE = {}
 ZOBRIST_TURN = random.getrandbits(64)
 TT = OrderedDict()
 
-def assign_memory(max_memory: int = 512):
+def assign_memory(max_memory: int = 512) -> None:
     global MAX_TT_SIZE
     max_memory_bytes = max(16, int(max_memory)) * 1024 * 1024
     MAX_TT_SIZE = max(50_000, max_memory_bytes // _APPROX_ENTRY_BYTES)
     if len(TT) > MAX_TT_SIZE:
         trim()
 
-def trim():
+def trim() -> None:
     while len(TT) > MAX_TT_SIZE:
         TT.popitem(last=False)
 
-def init_zobrist(dimension: int):
+def init_zobrist(dimension: int) -> None:
     if ZOBRIST_TABLE: return 
     
     random.seed(42)
@@ -34,7 +35,7 @@ def key(board_hash: int, side_to_move: int) -> int:
         return board_hash ^ ZOBRIST_TURN
     return board_hash
 
-def probe(hash_key: int, depth: int, alpha: int, beta: int):
+def probe(hash_key: int, depth: int, alpha: float, beta: float) -> Optional[int]:
     value = TT.get(hash_key)
     if value is None:
         return None
@@ -50,7 +51,7 @@ def probe(hash_key: int, depth: int, alpha: int, beta: int):
             return score
     return None
 
-def store(hash_key: int, depth: int, alpha0: int, beta0: int, score: int):
+def store(hash_key: int, depth: int, alpha0: float, beta0: float, score: int) -> None:
     if alpha0 < score < beta0:
         flag = EXACT
     elif score >= beta0:
@@ -65,5 +66,5 @@ def store(hash_key: int, depth: int, alpha0: int, beta0: int, score: int):
         if len(TT) > MAX_TT_SIZE:
             trim()
 
-def clear():
+def clear() -> None:
     TT.clear()
